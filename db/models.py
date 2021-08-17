@@ -9,6 +9,7 @@ from schema import EmojiAddTagsIn
 class Tag(models.Model):
     id = fields.UUIDField(pk=True)
     name = fields.CharField(max_length=100)
+    created_at = fields.DatetimeField(auto_now_add=True)
     emoji_list = fields.ManyToManyField(
         'models.Emoji', related_name='_tag_list')
 
@@ -34,6 +35,8 @@ class Tag(models.Model):
 class Emoji(models.Model):
     id = fields.UUIDField(pk=True)
     url = fields.CharField(max_length=100)
+    average_hash = fields.CharField(max_length=100)
+    created_at = fields.DatetimeField(auto_now_add=True)
 
     async def add_tags(self, emojiAddTagsIn: EmojiAddTagsIn):
         """ 新增標籤 (會自動忽略重複的標籤)
@@ -42,8 +45,8 @@ class Emoji(models.Model):
         await self._tag_list.add(*tag_list)
 
 
-class CombindEmoji(models.Model):
-    id = fields.UUIDField(pk=True)
-    combind_url = fields.TextField()
-    emoji_list = fields.ManyToManyField(
-        'models.Emoji', related_name='combindEmoji_list')
+# class CombindEmoji(models.Model):
+#     id = fields.UUIDField(pk=True)
+#     combind_url = fields.TextField()
+#     emoji_list = fields.ManyToManyField(
+#         'models.Emoji', related_name='combindEmoji_list')

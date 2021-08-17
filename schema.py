@@ -1,10 +1,19 @@
-
 from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, root_validator
 from typing import List, Optional
 from uuid import UUID
 import requests
+import datetime
+
+from io import BytesIO
+import imagehash
+from PIL import Image  # python -m pip install Pillow
+
+from utils import (
+    is_alive_url,
+    get_average_hash,
+)
 
 
 class OutBase(BaseModel):
@@ -30,11 +39,15 @@ class EmojiBase(BaseModel):
 
 
 class EmojiIn(EmojiBase):
-    tags_str: str
+    tags_str: str = None
+    average_hash: str = None
 
     @validator('url')
     def format_url(url):
-        """ 輸出格式化: 去除中間空白與頭尾空白
+        """
+        輸出前格式化:
+        1. 去除中間空白與頭尾空白
+        2. 一律使用 https 開頭
         """
         url = url.replace(' ', '').strip()
         if 'emos.plurk.com' in url:
@@ -48,14 +61,24 @@ class EmojiIn(EmojiBase):
     def alive_url(url):
         """ 輸出前驗證: 網址是否存在
         """
-        res = requests.head(url)
-        if res.status_code == 200:
+        if is_alive_url(url):
             return url
         raise ValueError(f'網址無法連線: {url}')
+
+    @root_validator
+    def fill_average_hash(cls, value_dict: dict):
+        """ 輸出前自動填入 average_hash
+        """
+        average_hash = value_dict['average_hash']
+        if average_hash is None:
+            value_dict['average_hash'] = get_average_hash(value_dict['url'])
+        return value_dict
 
 
 class EmojiOut(EmojiBase, OutBase):
     id: UUID
+    created_at: datetime.datetime
+    average_hash: str
     tag_list: List[TagOut]
 
 
@@ -81,3 +104,9 @@ class EmojiAddTagsIn(BaseModel):
         return [
             tag_str for tag_str in tag_str_list if tag_str
         ]
+
+
+if __name__ == '__main__':
+    emojiIn = EmojiIn(
+        url='https://emos.plurk.com/22aafc0710c5febfdf95cdee1aa74f1b_w48_h48.jpeg')
+    print(emojiIn)

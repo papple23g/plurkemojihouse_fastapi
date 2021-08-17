@@ -42,11 +42,21 @@ async def 獲取表符列表():
 
 
 @app.post("/emoji")
-async def 新增表符列表(emojiIn: EmojiIn):
+async def 新增表符(emojiIn: EmojiIn):
     emoji, _ = await Emoji.get_or_create(
         url=emojiIn.url,
+        defaults=dict(
+            average_hash=emojiIn.average_hash,
+        )
     )
     await emoji.add_tags(EmojiAddTagsIn(tags_str=emojiIn.tags_str))
+    return JSONResponse(status_code=status.HTTP_200_OK)
+
+
+@app.post("/emoji_list")
+async def 批量新增表符列表(emojiIn_list: List[EmojiIn]):
+    for emojiIn in emojiIn_list:
+        await 新增表符(emojiIn)
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
