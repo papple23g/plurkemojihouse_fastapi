@@ -11,10 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from tortoise.query_utils import Prefetch
 from pathlib import Path
 from loguru import logger
+from uuid import UUID
 
 from initializer import init
 from db.models import *
-from db.schema import *
+from schema import *
 
 
 # 建立 app 實例
@@ -40,25 +41,42 @@ async def 獲取表符列表():
     return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
 
 
-@app.post("/emoji", response_model=IdOut)
+@app.post("/emoji")
 async def 新增表符列表(emojiIn: EmojiIn):
-    emoji = await Emoji.create(
-        **emojiIn.dict()
+    emoji, _ = await Emoji.get_or_create(
+        url=emojiIn.url,
     )
-    emoji.tag_list.add()
-    return IdOut.from_orm(emoji)
+    await emoji.add_tags(EmojiAddTagsIn(tags_str=emojiIn.tags_str))
+    return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.post("/emoji/add_tags")
+@app.delete("/emoji")
+async def 刪除表符(id: UUID):
+    emoji = await Emoji.filter(id=id).first()
+    if emoji:
+        await emoji.delete()
+    return JSONResponse(status_code=status.HTTP_200_OK)
+
+
+@app.delete("/tag")
+async def 刪除標籤(id: UUID):  # .### 待測試
+    tag = await Tag.filter(id=id).first()
+    if tag:
+        await tag.delete()
+    return JSONResponse(status_code=status.HTTP_200_OK)
+
+
+@app.put("/emoji")
 async def 更新表符_追加標籤(
         *,
-        id: int = Query(..., description='表符 ID'),
-        addTagsIn: AddTagsIn):
+        id: UUID = Query(..., description='表符 ID'),
+        emojiAddTagsIn: EmojiAddTagsIn):
+
     emoji = await Emoji.filter(id=id).first()
     if not emoji:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND)
-    tag_list = await Tag.get_tag_list_by_str_list(addTagsIn.tag_str_list)
-    await emoji._tag_list.add(*tag_list)
+
+    await emoji.add_tags(emojiAddTagsIn)
     return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "更新成功"})
 
 

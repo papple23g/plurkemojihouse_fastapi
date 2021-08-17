@@ -3,10 +3,11 @@ from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 from pydantic import BaseModel
 from typing import List
+from schema import EmojiAddTagsIn
 
 
 class Tag(models.Model):
-    id = fields.IntField(pk=True)
+    id = fields.UUIDField(pk=True)
     name = fields.CharField(max_length=100)
     emoji_list = fields.ManyToManyField(
         'models.Emoji', related_name='_tag_list')
@@ -31,13 +32,18 @@ class Tag(models.Model):
 
 
 class Emoji(models.Model):
-    id = fields.IntField(pk=True)
+    id = fields.UUIDField(pk=True)
     url = fields.CharField(max_length=100)
-    tag_list: fields.ManyToManyRelation["Tag"]
+
+    async def add_tags(self, emojiAddTagsIn: EmojiAddTagsIn):
+        """ 新增標籤 (會自動忽略重複的標籤)
+        """
+        tag_list = await Tag.get_tag_list_by_str_list(emojiAddTagsIn.tag_str_list)
+        await self._tag_list.add(*tag_list)
 
 
 class CombindEmoji(models.Model):
-    id = fields.IntField(pk=True)
+    id = fields.UUIDField(pk=True)
     combind_url = fields.TextField()
     emoji_list = fields.ManyToManyField(
         'models.Emoji', related_name='combindEmoji_list')
