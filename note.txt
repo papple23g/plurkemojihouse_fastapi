@@ -1,0 +1,2 @@
+先重新定義模型和 fields
+之後再從舊DB上Query、寫入至新DB
