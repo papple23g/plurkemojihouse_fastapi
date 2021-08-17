@@ -1,4 +1,5 @@
 from fastapi.params import Query
+from pydantic.types import conint
 import _pickle as cPickle
 from dataclasses import dataclass
 import pickle
@@ -34,9 +35,19 @@ async def 首頁(request: Request):
 
 
 @app.get("/emoji", response_model=List[EmojiOut])
-async def 獲取表符列表():
-    emoji_list = await Emoji.all().prefetch_related(
-        Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
+async def 獲取表符列表(
+        *,
+        page: conint(ge=1) = Query(1, description="頁數"),
+        per_page_result_n: int = Query(30, description="每頁顯示數量")):
+
+    offset_n: int = (page-1)*per_page_result_n
+
+    emoji_list = await Emoji.all()\
+        .order_by('-created_at')\
+        .offset(offset_n)\
+        .limit(per_page_result_n)\
+        .prefetch_related(
+            Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
     )
     return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
 
@@ -62,6 +73,7 @@ async def 批量新增表符列表(emojiIn_list: List[EmojiIn]):
 
 @app.delete("/emoji")
 async def 刪除表符(id: UUID):
+
     emoji = await Emoji.filter(id=id).first()
     if emoji:
         await emoji.delete()
