@@ -1,5 +1,7 @@
 from tortoise import Tortoise, run_async
 from db.models import *
+from tortoise.query_utils import Q
+from functools import reduce
 
 
 async def init_db():
@@ -10,7 +12,13 @@ async def init_db():
 async def main():
     await init_db()
 
-    emoji_list = await Emoji.all().order_by('-created_at').offset(100).limit(3)
+    tag_str_list = ["Ib", "臉紅"]
+    emoji_list = await Emoji.filter(
+        reduce(
+            lambda x, y: x and y,
+            [Q(_tag_list__name__in=[tag_str]) for tag_str in tag_str_list]
+        )
+    ).order_by('-created_at').distinct()
     for emoji in emoji_list:
         print(emoji.id)
 

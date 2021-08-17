@@ -13,6 +13,8 @@ from tortoise.query_utils import Prefetch
 from pathlib import Path
 from loguru import logger
 from uuid import UUID
+from tortoise.query_utils import Q
+from functools import reduce
 
 from initializer import init
 from db.models import *
@@ -38,17 +40,31 @@ async def 首頁(request: Request):
 async def 獲取表符列表(
         *,
         page: conint(ge=1) = Query(1, description="頁數"),
-        per_page_result_n: int = Query(30, description="每頁顯示數量")):
+        per_page_result_n: int = Query(30, description="每頁顯示數量"),
+        tags_str: str = None,):
 
+    # 建立表符查詢池: 若有指定查詢的標籤，就先過濾出皆含有全部這些標籤(AND)的表符
+    if tags_str:
+        tag_str_list = tags_str_2_tag_str_list(tags_str)
+        emoji_query = Emoji.filter(
+            reduce(
+                lambda x, y: x and y,
+                [Q(_tag_list__name__in=[tag_str]) for tag_str in tag_str_list]
+            )
+        )
+    else:
+        emoji_query = Emoji.all()
+
+    # 獲取查詢位移量
     offset_n: int = (page-1)*per_page_result_n
-
-    emoji_list = await Emoji.all()\
+    # 獲取表符列表
+    emoji_list = await emoji_query\
         .order_by('-created_at')\
         .offset(offset_n)\
         .limit(per_page_result_n)\
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
-    )
+        )
     return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
 
 

@@ -1,18 +1,12 @@
-from tortoise import fields, models
-from tortoise.contrib.pydantic import pydantic_model_creator
 from pydantic import BaseModel, validator, root_validator
-from typing import List, Optional
+from typing import List
 from uuid import UUID
-import requests
 import datetime
-
-from io import BytesIO
-import imagehash
-from PIL import Image  # python -m pip install Pillow
 
 from utils import (
     is_alive_url,
     get_average_hash,
+    tags_str_2_tag_str_list,
 )
 
 
@@ -97,13 +91,7 @@ class EmojiAddTagsIn(BaseModel):
         Returns:
             List[str]
         """
-        tag_str_list = [
-            tag_str.replace('　', ' ').strip()
-            for tag_str in self.tags_str.split(',')
-        ]
-        return [
-            tag_str for tag_str in tag_str_list if tag_str
-        ]
+        return tags_str_2_tag_str_list(self.tags_str)
 
 
 if __name__ == '__main__':
