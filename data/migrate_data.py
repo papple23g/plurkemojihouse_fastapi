@@ -5,7 +5,8 @@
 import requests
 import json
 
-url = 'https://papple23g-mysite2.herokuapp.com/PlurkEmojiHouse/search_by_tag?search_tag=&page=3325&user_uid=fwOlGfeWdDg0dtknxTnKHgeW8Ev1&num_of_emoji_per_page=20'
+# url = 'https://papple23g-mysite2.herokuapp.com/PlurkEmojiHouse/search_by_tag?search_tag=&page=3325&user_uid=fwOlGfeWdDg0dtknxTnKHgeW8Ev1&num_of_emoji_per_page=20'
+url = 'https://papple23g-mysite2.herokuapp.com/PlurkEmojiHouse/search_by_tag?search_tag=Deemo'
 res = requests.get(url)
 _emoji_dict_list = res.json()
 
@@ -13,7 +14,7 @@ emoji_dict_list = [
     dict(
         url=emoji_dict['url'],
         tags_str=emoji_dict['tags'],
-        average_hash=emoji_dict['imagehash_str'],
+        average_hash_str=emoji_dict['imagehash_str'],
     )
     for emoji_dict in _emoji_dict_list
 ]

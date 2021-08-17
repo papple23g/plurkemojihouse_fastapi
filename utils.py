@@ -18,7 +18,7 @@ def is_alive_url(url: str) -> bool:
     return (res.status_code == 200)
 
 
-def get_average_hash(img_src: str) -> str:
+def get_average_hash_str(img_src: str) -> str:
     """ 根據圖片網址獲取平均哈希值
 
     Args:

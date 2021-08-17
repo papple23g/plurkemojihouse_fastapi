@@ -2,10 +2,12 @@ from pydantic import BaseModel, validator, root_validator
 from typing import List
 from uuid import UUID
 import datetime
+import imagehash
+
 
 from utils import (
     is_alive_url,
-    get_average_hash,
+    get_average_hash_str,
     tags_str_2_tag_str_list,
 )
 
@@ -34,7 +36,7 @@ class EmojiBase(BaseModel):
 
 class EmojiIn(EmojiBase):
     tags_str: str = None
-    average_hash: str = None
+    average_hash_str: str = None
 
     @validator('url')
     def format_url(url):
@@ -63,16 +65,17 @@ class EmojiIn(EmojiBase):
     def fill_average_hash(cls, value_dict: dict):
         """ 輸出前自動填入 average_hash
         """
-        average_hash = value_dict['average_hash']
-        if average_hash is None:
-            value_dict['average_hash'] = get_average_hash(value_dict['url'])
+        average_hash_str = value_dict['average_hash_str']
+        if average_hash_str is None:
+            value_dict['average_hash_str'] = get_average_hash_str(
+                value_dict['url'])
         return value_dict
 
 
 class EmojiOut(EmojiBase, OutBase):
     id: UUID
     created_at: datetime.datetime
-    average_hash: str
+    average_hash_str: str
     tag_list: List[TagOut]
 
 
@@ -98,3 +101,6 @@ if __name__ == '__main__':
     emojiIn = EmojiIn(
         url='https://emos.plurk.com/22aafc0710c5febfdf95cdee1aa74f1b_w48_h48.jpeg')
     print(emojiIn)
+    print(type(emojiIn.average_hash_str))
+
+    print(imagehash.hex_to_hash(emojiIn.average_hash_str))

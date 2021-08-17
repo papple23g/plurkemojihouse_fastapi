@@ -2,6 +2,8 @@ from tortoise import Tortoise, run_async
 from db.models import *
 from tortoise.query_utils import Q
 from functools import reduce
+import imagehash
+import pandas as pd
 
 
 async def init_db():
@@ -12,15 +14,9 @@ async def init_db():
 async def main():
     await init_db()
 
-    tag_str_list = ["Ib", "臉紅"]
-    emoji_list = await Emoji.filter(
-        reduce(
-            lambda x, y: x and y,
-            [Q(_tag_list__name__in=[tag_str]) for tag_str in tag_str_list]
-        )
-    ).order_by('-created_at').distinct()
+    emoji_list = await Emoji.get_similar_emoji_list(average_hash_str='ef87831b81019bfb')
     for emoji in emoji_list:
-        print(emoji.id)
+        print(emoji.url)
 
 if __name__ == '__main__':
     run_async(main())

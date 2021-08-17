@@ -73,7 +73,7 @@ async def 新增表符(emojiIn: EmojiIn):
     emoji, _ = await Emoji.get_or_create(
         url=emojiIn.url,
         defaults=dict(
-            average_hash=emojiIn.average_hash,
+            average_hash_str=emojiIn.average_hash_str,
         )
     )
     await emoji.add_tags(EmojiAddTagsIn(tags_str=emojiIn.tags_str))
