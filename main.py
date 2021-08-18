@@ -40,7 +40,7 @@ async def 首頁(request: Request):
 async def 獲取表符列表(
         *,
         page: conint(ge=1) = Query(1, description="頁數"),
-        per_page_result_n: int = Query(30, description="每頁顯示數量"),
+        page_size_n: int = Query(30, description="每頁顯示數量"),
         tags_str: str = None,):
 
     # 建立表符查詢池: 若有指定查詢的標籤，就先過濾出皆含有全部這些標籤(AND)的表符
@@ -56,12 +56,12 @@ async def 獲取表符列表(
         emoji_query = Emoji.all()
 
     # 獲取查詢位移量
-    offset_n: int = (page-1)*per_page_result_n
+    offset_n: int = (page-1)*page_size_n
     # 獲取表符列表
     emoji_list = await emoji_query\
         .order_by('-created_at')\
         .offset(offset_n)\
-        .limit(per_page_result_n)\
+        .limit(page_size_n)\
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
         )
