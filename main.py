@@ -104,7 +104,7 @@ async def 刪除標籤(id: UUID):  # .### 待測試
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.put("/emoji")
+@app.put("/emoji", response_model=EmojiOut)
 async def 更新表符_追加標籤(
         *,
         id: UUID = Query(..., description='表符 ID'),
@@ -115,7 +115,11 @@ async def 更新表符_追加標籤(
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND)
 
     await emoji.add_tags(emojiAddTagsIn)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "更新成功"})
+
+    emoji = await Emoji.get(id=id).prefetch_related(
+        Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
+    )
+    return EmojiOut.from_orm(emoji)
 
 
 init(app)

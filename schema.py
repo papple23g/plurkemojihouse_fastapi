@@ -78,6 +78,12 @@ class EmojiOut(EmojiBase, OutBase):
     average_hash_str: str
     tag_list: List[TagOut]
 
+    @validator('tag_list')
+    def order_tags_by_name(cls, tag_list):
+        """ 輸出前驗證: 網址是否存在
+        """
+        return sorted(tag_list, key=lambda tag: tag.name)
+
 
 class EmojiAddTagsIn(BaseModel):
     """ 更新表符的標籤列表 模型

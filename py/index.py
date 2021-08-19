@@ -8,8 +8,7 @@ from py.utils import *
 
 
 async def main():
-
-    # 分析網址查詢參數字典 #.###
+    # 分析網址查詢參數字典  # .###
 
     # 獲取表符物件列表
     emoji_list = await Emoji.get_emoji_list(
