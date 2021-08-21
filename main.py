@@ -45,17 +45,28 @@ async def 獲取表符列表(
 
     # 建立表符查詢池: 若有指定查詢的標籤，就先過濾出皆含有全部這些標籤(AND)的表符
     if tags_str:
+        # 獲取標籤字串列表
         tag_str_list = tags_str_2_tag_str_list(tags_str)
-        emoji_query = Emoji.filter(
-            reduce(
-                lambda x, y: x and y,
-                [Q(_tag_list__name__in=[tag_str]) for tag_str in tag_str_list]
-            )
-        )
+        # 獲取標籤列表
+        tag_list = [await Tag.filter(name=tag_str).first() for tag_str in tag_str_list]
+        # 若有任何標籤不存在，則回傳空表符列表
+        if not all(tag_list):
+            return []
+        # 獲取[各標籤的表符列表]列表
+        emoji_list_list = [
+            await Emoji.filter(_tag_list__in=[tag])
+            for tag in tag_list
+        ]
+        # 獲取這些表符列表的表符 ID 聯集
+        emoji_id_set = reduce(lambda x, y: x & y, [
+            set(emoji.id for emoji in emoji_list) for emoji_list in emoji_list_list])
+        # 獲取符合所有標籤的表符查詢池
+        emoji_query = Emoji.filter(id__in=emoji_id_set)
+    # 若不指定查詢標籤，則直接查詢所有表符
     else:
         emoji_query = Emoji.all()
 
-    # 獲取查詢位移量
+    # 計算查詢位移量
     offset_n: int = (page-1)*page_size_n
     # 獲取表符列表
     emoji_list = await emoji_query\
@@ -65,6 +76,9 @@ async def 獲取表符列表(
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
         )
+    emoji_list = await emoji_query.prefetch_related(
+        Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
+    )
     return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
 
 

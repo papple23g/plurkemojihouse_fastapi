@@ -8,14 +8,13 @@ from py.utils import *
 
 
 async def main():
-    # 分析網址查詢參數字典  # .###
+    # 分析網址查詢參數字典
+    emojiQuery = EmojiQuery.from_url(window.location.href)
+    # print(emojiQuery)
 
     # 獲取表符物件列表
     emoji_list = await Emoji.get_emoji_list(
-        emojiQuery=EmojiQuery(
-            page_size_n=3,
-            tags_str='噴',
-        )
+        emojiQuery=emojiQuery
     )
 
     # 生成表符列表表格

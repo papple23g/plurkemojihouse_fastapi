@@ -3,10 +3,11 @@ from browser.html import *
 from browser import bind, window, alert, ajax, aio, prompt
 import json
 from typing import List, Dict, Any, Union
+import inspect
 
 from py.utils import *
 Emoji = None
-
+EmojiQuery=None
 
 @dataclass
 class EmojiQuery:
@@ -15,6 +16,22 @@ class EmojiQuery:
     page: int = 1
     page_size_n: int = 30
     tags_str: str = None
+
+    @classmethod
+    def from_url(cls,url:str)->EmojiQuery:
+        """ 以 url 取得查詢表符參數
+
+        Args:
+            url (str)
+
+        Returns:
+            EmojiQuery
+        """
+        url_query_dict = get_url_query_dict(url)
+        return cls(**{
+            k: v for k, v in url_query_dict.items()
+            if k in inspect.signature(cls).parameters
+        })
 
 
 @dataclass
