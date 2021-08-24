@@ -97,6 +97,14 @@ class Tag:
 
 
 @dataclass
+class ApiEmojiOut:
+    """ 表符列表結果
+    """
+    emoji_list: List[Emoji]
+    emoji_n: int
+
+
+@dataclass
 class Emoji:
     """ 表符元素
     """
@@ -107,7 +115,7 @@ class Emoji:
     tag_list: List[Tag]
 
     @classmethod
-    def create(cls, emoji_dict: dict):
+    def from_dict(cls, emoji_dict: dict):
         """ 輸入字典建立表符
         """
         return cls(**dict(
@@ -206,9 +214,9 @@ class Emoji:
         return tr
 
     @classmethod
-    async def get_emoji_list(
+    async def get_apiEmojiOut(
             cls,
-            emojiQuery: EmojiQuery) -> List[Emoji]:
+            emojiQuery: EmojiQuery) -> ApiEmojiOut:
         """ 根據搜尋條件取得表符列表
 
         Args:
@@ -218,26 +226,37 @@ class Emoji:
             List[Emoji]
         """
 
+        # 建立搜尋表單字典
         emojiQuery_dict = {
             k: v for k, v in asdict(emojiQuery).items() if v is not None
         }
 
-        return [
-            Emoji.create(emoji_dict)
-            for emoji_dict in json.loads((await aio.get("/emoji", data=emojiQuery_dict)).data)
-        ]
+        res_dict = json.loads((await aio.get("/api/emoji", data=emojiQuery_dict)).data)
+
+        return ApiEmojiOut(
+            emoji_list=[
+                cls.from_dict(emoji_dict)
+                for emoji_dict in res_dict['emoji_list']],
+            emoji_n=res_dict['emoji_n'],
+        )
 
     async def put_tags(self, tags_str: str) -> Emoji:
         """ 更新表符標籤
+
+        Args:
+            tags_str (str): 多個標籤字串(使用逗號分隔)
+
+        Returns:
+            Emoji
         """
         emoji_dict = json.loads((await aio.ajax(
             "PUT",
-            f"/emoji?id={self.id}",
+            f"/api/emoji?id={self.id}",
             format="binary",
             data=json.dumps(dict(
                 tags_str=tags_str)
             ))).data)
-        return Emoji.create(emoji_dict)
+        return Emoji.from_dict(emoji_dict)
 
 
 @dataclass

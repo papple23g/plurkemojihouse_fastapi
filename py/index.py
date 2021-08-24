@@ -13,14 +13,15 @@ async def main():
     # print(emojiQuery)
 
     # 獲取表符物件列表
-    emoji_list = await Emoji.get_emoji_list(
+    apiEmojiOut = await Emoji.get_apiEmojiOut(
         emojiQuery=emojiQuery
     )
 
     # 生成表符列表表格
     emojiTable = EmojiTable(
-        emoji_list=emoji_list
+        emoji_list=apiEmojiOut.emoji_list
     )
+    print('apiEmojiOut.emoji_n', apiEmojiOut.emoji_n)
 
     doc <= emojiTable.table_div
 

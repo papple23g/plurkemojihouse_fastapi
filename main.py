@@ -31,12 +31,12 @@ app.mount("/py", StaticFiles(directory="py"), name="py")
 templates = Jinja2Templates(directory=".")
 
 
-@app.get("/", response_class=HTMLResponse)
-async def 首頁(request: Request):
+@app.get("/search", response_class=HTMLResponse)
+async def 表符搜尋頁面(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/emoji", response_model=List[EmojiOut])
+@app.get("/api/emoji", response_model=ApiEmojiOut)
 async def 獲取表符列表(
         *,
         page: conint(ge=1) = Query(1, description="頁數"),
@@ -68,6 +68,10 @@ async def 獲取表符列表(
 
     # 計算查詢位移量
     offset_n: int = (page-1)*page_size_n
+
+    # 獲取表符數量
+    emoji_n = await emoji_query.count()
+
     # 獲取表符列表
     emoji_list = await emoji_query\
         .order_by('-created_at')\
@@ -76,10 +80,13 @@ async def 獲取表符列表(
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
         )
-    return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
+    return ApiEmojiOut(
+        emoji_list=[EmojiOut.from_orm(emoji) for emoji in emoji_list],
+        emoji_n=emoji_n,
+    )
 
 
-@app.post("/emoji")
+@app.post("/api/emoji")
 async def 新增表符(emojiIn: EmojiIn):
     emoji, _ = await Emoji.get_or_create(
         url=emojiIn.url,
@@ -91,14 +98,14 @@ async def 新增表符(emojiIn: EmojiIn):
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.post("/emoji_list")
+@app.post("/api/emoji_list")
 async def 批量新增表符列表(emojiIn_list: List[EmojiIn]):
     for emojiIn in emojiIn_list:
         await 新增表符(emojiIn)
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.delete("/emoji")
+@app.delete("/api/emoji")
 async def 刪除表符(id: UUID):
 
     emoji = await Emoji.filter(id=id).first()
@@ -107,7 +114,7 @@ async def 刪除表符(id: UUID):
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.delete("/tag")
+@app.delete("/api/tag")
 async def 刪除標籤(id: UUID):  # .### 待測試
     tag = await Tag.filter(id=id).first()
     if tag:
@@ -115,7 +122,7 @@ async def 刪除標籤(id: UUID):  # .### 待測試
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.put("/emoji", response_model=EmojiOut)
+@app.put("/api/emoji", response_model=EmojiOut)
 async def 更新表符_追加標籤(
         *,
         id: UUID = Query(..., description='表符 ID'),
@@ -141,7 +148,7 @@ if __name__ == '__main__':
     HOST: str = '127.0.0.1'
     PORT: int = 8000
 
-    logger.info(f'首頁 請照訪：http://{HOST}:{PORT}')
+    logger.info(f'首頁 請照訪：http://{HOST}:{PORT}/search')
     logger.info(f'API Docs 請照訪：http://{HOST}:{PORT}/docs')
 
     uvicorn.run(

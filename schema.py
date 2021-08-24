@@ -103,6 +103,11 @@ class EmojiAddTagsIn(BaseModel):
         return tags_str_2_tag_str_list(self.tags_str)
 
 
+class ApiEmojiOut(BaseModel):
+    emoji_list: List[EmojiOut]
+    emoji_n: int
+
+
 if __name__ == '__main__':
     emojiIn = EmojiIn(
         url='https://emos.plurk.com/22aafc0710c5febfdf95cdee1aa74f1b_w48_h48.jpeg')
