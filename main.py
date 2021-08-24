@@ -76,9 +76,6 @@ async def 獲取表符列表(
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
         )
-    emoji_list = await emoji_query.prefetch_related(
-        Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
-    )
     return [EmojiOut.from_orm(emoji) for emoji in emoji_list]
 
 

@@ -7,7 +7,8 @@ import inspect
 
 from py.utils import *
 Emoji = None
-EmojiQuery=None
+EmojiQuery = None
+
 
 @dataclass
 class EmojiQuery:
@@ -18,7 +19,7 @@ class EmojiQuery:
     tags_str: str = None
 
     @classmethod
-    def from_url(cls,url:str)->EmojiQuery:
+    def from_url(cls, url: str) -> EmojiQuery:
         """ 以 url 取得查詢表符參數
 
         Args:
