@@ -33,7 +33,3 @@ def get_average_hash_str(img_src: str) -> str:
     img_res = requests.get(img_src)
     image = Image.open(BytesIO(img_res.content))
     return str(imagehash.average_hash(image))
-
-
-if __name__ == '__main__':
-    print(type(average_hash('https://i.imgur.com/Mv3fvJ0.j')))

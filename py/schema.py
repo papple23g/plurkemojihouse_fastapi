@@ -2,7 +2,7 @@ from dataclasses import dataclass, asdict
 from browser.html import *
 from browser import bind, window, alert, ajax, aio, prompt
 import json
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Optional, Union
 import inspect
 
 from py.utils import *
@@ -14,7 +14,7 @@ EmojiQuery = None
 class EmojiQuery:
     """ 查詢表符參數
     """
-    page: int = 1
+    page_n: int = 1
     page_size_n: int = 30
     tags_str: str = None
 
@@ -29,12 +29,31 @@ class EmojiQuery:
             EmojiQuery
         """
         url_query_dict = get_url_query_dict(url)
-        return cls(**{
-            k: v for k, v in url_query_dict.items()
-            if k in inspect.signature(cls).parameters
-        })
+        tags_str = url_query_dict.get('tags_str', None)
+        tags_str: Optional[str] = tags_str and str(tags_str)
+        return cls(
+            page_n=int(url_query_dict.get('page_n', cls.page_n)),
+            page_size_n=int(url_query_dict.get(
+                'page_size_n', cls.page_size_n)),
+            tags_str=tags_str,
+        )
+
+    def to_url_query_str(self, page_n: int = None) -> str:
+        """取得查詢表符參數的 url query string
+
+        Args:
+            page_n (int, optional): 指定頁籤編號. Defaults to None.
+
+        Returns:
+            str
+        """
+        url_query_dict = asdict(self)
+        if page_n:
+            url_query_dict['page_n'] = page_n
+        return '&'.join([f'{k}={v}' for k, v in url_query_dict.items() if v])
 
 
+@dataclass
 @dataclass
 class Tag:
     """ 標籤元素
@@ -310,5 +329,167 @@ class EmojiTable:
                 ],
                 Class="w3-table-all"
             ),
+            Class="w3-container",
+        )
+
+
+@dataclass
+class EmojiTablePageBtnArea:
+    """ 表符表格頁籤區域 """
+
+    emojiQuery: EmojiQuery
+    emoji_n: int
+    # 頁籤樣式(使用 w3 Class 來設定)
+    btn_class_str_list = [
+        "w3-button",
+        "w3-round",
+        "w3-border",
+        "w3-hover-blue"
+    ]
+    # hover或當前頁籤樣式(使用 w3 Class 來設定)
+    hover_or_current_btn_class_str_list = [
+        *btn_class_str_list,
+        "w3-blue",
+    ]
+    margin_style_dict = dict(margin="10 5")
+
+    @property
+    def current_page_n(self):
+        # 獲取當前頁數編號
+        return self.emojiQuery.page_n
+
+    @property
+    def page_btn_n(self):
+        # 計算頁籤按鈕數量
+        return self.emoji_n // self.emojiQuery.page_size_n
+
+    def a(self, page_n: int, is_current: bool = False, text: str = None) -> A:
+        """ 一個頁籤超連結(A)元素
+
+        Args:
+            page_n (int): 頁數
+            is_current (bool, optional): 是否為當前頁籤. Defaults to False.
+            text (str, optional): 頁籤文字. Defaults to page_n.
+
+        Returns:
+            A
+        """
+        text = text if text else str(page_n)
+        return A(
+            text,
+            href='/search?' +
+            self.emojiQuery.to_url_query_str(page_n=page_n),
+            Class=" ".join(
+                self.hover_or_current_btn_class_str_list if is_current else self.btn_class_str_list
+            ),
+            style=self.margin_style_dict,
+        )
+
+    def ellipsis_span(self) -> SPAN:
+        """ 省略頁籤 SPAN 元素
+
+        Returns:
+            SPAN
+        """
+        return SPAN(
+            "...",
+            style=self.margin_style_dict
+        )
+
+    def _page_number_btn_a_list(self) -> List[Union[A, SPAN]]:
+        """ 頁籤數字按鈕元素列表
+
+        Returns:
+            List[Union[A, SPAN]]: 頁籤超連結(A)元素列表，可能含有省略符號 SPAN("...")
+        """
+
+        # 若按頁籤鈕數量少於 10 個, 則全部列出
+        if self.page_btn_n < 10:
+            return [
+                self.a(
+                    page_n=page_n,
+                    is_current=(self.current_page_n == page_n),
+                )
+                for page_n in range(1, self.page_btn_n+1)
+            ]
+
+        # 若按頁籤鈕數量大於 10 個，且當前頁面很靠近首頁或末頁 (效果: 1 2 3 4 5 .... 7 8 9 10 11)
+        if (1 <= self.current_page_n <= 5) or (self.page_btn_n-4 <= self.current_page_n <= self.page_btn_n):
+            return [
+                # 前段數字按鈕
+                self.a(
+                    page_n=page_n,
+                    is_current=(self.current_page_n == page_n),
+                )
+                for page_n in range(1, 6)
+            ]+[
+                # 選擇性增補第 6 頁數字按鈕
+                self.a(page_n=6)
+            ]*(self.current_page_n == 5)+[
+                # 省略符號 (...)
+                self.ellipsis_span()
+            ]+[
+                # 選擇性增補倒數第 6 頁數字按鈕
+                self.a(page_n=self.page_btn_n-5)
+            ]*(self.current_page_n == self.page_btn_n-4)+[
+                # 末段數字按鈕
+                self.a(
+                    page_n=page_n,
+                    is_current=(self.current_page_n == page_n),
+                )
+                for page_n in range(self.page_btn_n-4, self.page_btn_n+1)
+            ]
+
+        # 若按頁籤鈕數量大於 10 個，且當前頁面不靠近首頁或末頁 (效果: 1 2 3 ... 5 6 7 ... 9 10 11)
+        return [
+            # 前段數字按鈕
+            self.a(page_n=page_n)
+            for page_n in range(1, 4)
+        ]+[
+            # 省略符號 (...)
+            self.ellipsis_span()
+        ]+[
+            # 中段數字按鈕
+            self.a(
+                page_n=page_n,
+                is_current=(self.current_page_n == page_n),
+            )
+            for page_n in range(self.current_page_n-1, self.current_page_n+2)
+        ]+[
+            # 省略符號 (...)
+            self.ellipsis_span()
+        ]+[
+            # 末段數字按鈕
+            self.a(page_n=page_n)
+            for page_n in range(self.page_btn_n-2, self.page_btn_n+1)
+        ]
+
+    @property
+    def div(self) -> DIV:
+        """ 表符表格頁籤區域元素
+
+        Returns:
+            DIV
+        """
+
+        return DIV(
+            [
+                # 第一頁按鈕
+                self.a(page_n=1, text="«"),
+                # 首頁按鈕
+                self.a(
+                    page_n=(self.current_page_n-1 if self.current_page_n >= 2 else 1), text="‹"),
+            ] +
+            [
+                # 數字按鈕
+                *self._page_number_btn_a_list()
+            ] +
+            [
+                # 下一頁按鈕
+                self.a(
+                    page_n=(self.current_page_n+1 if self.current_page_n != self.page_btn_n else self.current_page_n), text="›"),
+                # 末頁按鈕
+                self.a(page_n=self.page_btn_n, text="»"),
+            ],
             Class="w3-container",
         )

@@ -39,7 +39,7 @@ async def 表符搜尋頁面(request: Request):
 @app.get("/api/emoji", response_model=ApiEmojiOut)
 async def 獲取表符列表(
         *,
-        page: conint(ge=1) = Query(1, description="頁數"),
+        page_n: conint(ge=1) = Query(1, description="頁數"),
         page_size_n: int = Query(30, description="每頁顯示數量"),
         tags_str: str = None,):
 
@@ -67,7 +67,7 @@ async def 獲取表符列表(
         emoji_query = Emoji.all()
 
     # 計算查詢位移量
-    offset_n: int = (page-1)*page_size_n
+    offset_n: int = (page_n-1)*page_size_n
 
     # 獲取表符數量
     emoji_n = await emoji_query.count()

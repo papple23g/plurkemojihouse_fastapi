@@ -12,7 +12,7 @@ async def main():
     emojiQuery = EmojiQuery.from_url(window.location.href)
     # print(emojiQuery)
 
-    # 獲取表符物件列表
+    # 獲取表符物件列表與結果數量
     apiEmojiOut = await Emoji.get_apiEmojiOut(
         emojiQuery=emojiQuery
     )
@@ -21,8 +21,15 @@ async def main():
     emojiTable = EmojiTable(
         emoji_list=apiEmojiOut.emoji_list
     )
-    print('apiEmojiOut.emoji_n', apiEmojiOut.emoji_n)
 
     doc <= emojiTable.table_div
+
+    # 生成頁籤
+    emojiTablePageBtnArea = EmojiTablePageBtnArea(
+        emojiQuery=emojiQuery,
+        emoji_n=apiEmojiOut.emoji_n,
+    )
+
+    doc <= emojiTablePageBtnArea.div
 
 aio.run(main())
