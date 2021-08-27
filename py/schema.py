@@ -212,9 +212,9 @@ class Emoji:
         )
 
     @property
-    def tr(self) -> TR:
+    def main_tr(self) -> TR:
         """
-        表格單一橫列元素
+        表格單一橫列元素 (表符和標籤)
 
         Attributes:
             emoji: Emoji
@@ -224,9 +224,45 @@ class Emoji:
         """
         tr = TR(
             [
-                TD(self.img_div),
-                TD(self.iconTool_is_div),
+                # 表符儲存格
+                TD(
+                    self.img_div,
+                    rowspan=2,
+                    style=dict(
+                        # 置中表符圖片
+                        textAlign="center",
+                        verticalAlign="middle",
+                        # 儲存格格線
+                        border="1px solid #dddddd",
+                        paddingLeft="8px",
+                    ),
+                ),
                 TD(self.tag_spans_div)
+            ],
+        )
+        tr.emoji = self
+        return tr
+
+    @property
+    def tool_tr(self) -> TR:
+        """
+        表格單一橫列元素 (表符操作工具)
+
+        Attributes:
+            emoji: Emoji
+
+        Returns:
+            TR
+        """
+        tr = TR(
+            [
+                TD(
+                    self.iconTool_is_div,
+                    Class="w3-light-grey",
+                    style=dict(
+                        padding=3,
+                    ),
+                )
             ],
         )
         tr.emoji = self
@@ -295,20 +331,19 @@ class EmojiTable:
             THEAD
         """
         return THEAD([
-            TR([
-                TH(
-                    '表符',
-                    style=dict(width=60, textAlign="center")
-                ),
-                TH(
-                    '',
-                    style=dict(width="0%")
-                ),
-                TH(
-                    '標籤',
-                    style=dict(textAlign="center")
-                ),
-            ]),
+            TR(
+                [
+                    TH(
+                        '表符',
+                        style=dict(width=60, textAlign="center")
+                    ),
+                    TH(
+                        '標籤',
+                        style=dict(textAlign="center")
+                    ),
+                ],
+                Class="w3-indigo",
+            ),
         ])
 
     @property
@@ -324,10 +359,12 @@ class EmojiTable:
                     # 表格標頭
                     self._tableCol_th_tr_thead,
                 ]+[
-                    # 表格標頭
-                    emoji.tr for emoji in self.emoji_list
+                    # 表符圖片 + 標籤列表儲存格橫列；表符操作工具儲存格橫列
+                    (
+                        emoji.main_tr + emoji.tool_tr
+                    ) for emoji in self.emoji_list
                 ],
-                Class="w3-table-all"
+                Class="w3-table w3-border w3-bordered",
             ),
             Class="w3-container",
         )
