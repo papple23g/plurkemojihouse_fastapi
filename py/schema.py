@@ -111,6 +111,7 @@ class Tag:
                 padding='5px 12px',
                 marginTop='10px',
                 marginRight='5px',
+                lineHeight="2",
             )
         ).bind('click', lambda ev: aio.run(self.popup_add_tags_input_box(ev)))
 
@@ -182,16 +183,73 @@ class Emoji:
             marginBottom="2px",
             borderRadius="3px",
         )
-        return DIV([
-            I(
-                Class="fas fa-heart",
-                style=_icon_style_dict,
-            ),
-            I(
-                Class="fas fa-th-large",
-                style=_icon_style_dict,
-            ),
-        ])
+        _word_icon_style_dict = {
+            **_icon_style_dict,
+            **dict(fontSize="15px"),
+        }
+        _send_add_new_tag_btn_style_dict = dict(
+            color="cornflowerblue",
+            border="2px solid cornflowerblue",
+            padding="3 10",
+            cursor="pointer",
+            marginLeft="2px",
+            marginBottom="2px",
+            borderRadius="11px",
+            fontSize="15px",
+        )
+        return DIV(
+            [
+                # 表符操作工具 ICON 按鈕區域
+                DIV(
+                    [
+                        # 複製表符按鈕
+                        I(
+                            Class="far fa-copy",
+                            style=_icon_style_dict,
+                        ),
+                        # 檢視組合表符按鈕
+                        I(
+                            Class="fas fa-th-large",
+                            style=_icon_style_dict,
+                        ),
+                        # 收藏按鈕
+                        I(
+                            Class="fas fa-heart",
+                            style=_icon_style_dict,
+                        ),
+                        # 相似表符按鈕
+                        SPAN("似", style=_word_icon_style_dict),
+                        INPUT(
+                            style=dict(
+                                border="2px solid rgb(170, 170, 170)",
+                                borderRadius="20px",
+                                width="35%",
+                                marginLeft="5px",
+                                maxWidth="200px",
+                                outline="none",  # 不要顯示 foucs 的 outline
+                            )
+                        ),
+                        SPAN("新增", style=_send_add_new_tag_btn_style_dict),
+                        I(
+                            Class="fa fa-clone",
+                            style=_icon_style_dict,
+                        ),
+                    ],
+                    style=dict(
+                        float="left",
+                        width="100%",
+                    ),
+                ),
+
+                # # 新稱標籤區域
+                # DIV(
+                #     [
+
+                #     ],
+                #     style=dict(float="right"),
+                # )
+            ]
+        )
 
     @property
     def tag_spans_div(self) -> DIV:
@@ -200,13 +258,8 @@ class Emoji:
         Returns:
             DIV
         """
-        add_tag_btn = SPAN(
-            Tag(name="+").span,
-        )
-
         return DIV(
-            [tag.span for tag in self.tag_list] +
-            [add_tag_btn],
+            [tag.span for tag in self.tag_list],
             style=dict(lineHeight='28px'),
             Class="tag_spans",
         )
@@ -256,6 +309,7 @@ class Emoji:
         """
         tr = TR(
             [
+                #.###
                 TD(
                     self.iconTool_is_div,
                     Class="w3-light-grey",
@@ -325,7 +379,7 @@ class EmojiTable:
 
     @property
     def _tableCol_th_tr_thead(cls) -> THEAD:
-        """ 表格標題元素: 表符圖片、表符操作工具、標籤列表
+        """ 表格標頭元素: 表符圖片、表符操作工具、標籤列表
 
         Returns:
             THEAD
