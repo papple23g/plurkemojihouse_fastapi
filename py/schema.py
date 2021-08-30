@@ -1,6 +1,6 @@
 from dataclasses import dataclass, asdict
 from browser.html import *
-from browser import bind, window, alert, ajax, aio, prompt
+from browser import bind, window, alert, ajax, aio, prompt, doc
 import json
 from typing import List, Dict, Any, Optional, Union
 import inspect
@@ -54,7 +54,6 @@ class EmojiQuery:
 
 
 @dataclass
-@dataclass
 class Tag:
     """ 標籤元素
     """
@@ -74,9 +73,10 @@ class Tag:
 
         # 獲取被點擊的標籤 SPAN 元素
         clicked_span_elt = ev.currentTarget
+        emoji_tr = clicked_span_elt.closest('tr')
 
         # 自 TR 元素獲取表符物件
-        emoji: Emoji = clicked_span_elt.closest('tr').emoji
+        emoji: Emoji = emoji_tr.emoji
         # 送出新增標籤請求後，獲取更新後的表符物件
         emoji = await emoji.put_tags(tags_str)
 
@@ -84,6 +84,9 @@ class Tag:
         tag_spans_div = clicked_span_elt.closest('div.tag_spans')
         tag_spans_div.clear()
         tag_spans_div <= emoji.tag_spans_div.children
+
+        # 更新 tr 元素上的表符物件
+        doc.select_one(f'[emoji-id="{emoji.id}"]').emoji = emoji
 
     @property
     def span(self) -> SPAN:
@@ -149,6 +152,24 @@ class Emoji:
             ],
         ))
 
+    def get_tr(self):
+        return doc.select_one(f'[emoji-id="{self.id}"]')
+
+    def get_emoji(self):
+        return self.get_tr().emoji
+
+    def get_tags_str(self):
+        """ 表符標籤字串
+        """
+        return ', '.join([tag.name for tag in self.get_emoji().tag_list])
+
+    def copy_tags_str(self, ev):
+        """ 複製標籤字串
+        """
+        tags_str = self.get_tags_str()
+        copy_text_to_cliboard(tags_str)
+        alert(f"已複製標籤：「{tags_str}」")
+
     @property
     def img_div(self) -> DIV:
         """ 網格區域元素: 表符圖片
@@ -197,58 +218,51 @@ class Emoji:
             borderRadius="11px",
             fontSize="15px",
         )
+
         return DIV(
             [
-                # 表符操作工具 ICON 按鈕區域
-                DIV(
-                    [
-                        # 複製表符按鈕
-                        I(
-                            Class="far fa-copy",
-                            style=_icon_style_dict,
-                        ),
-                        # 檢視組合表符按鈕
-                        I(
-                            Class="fas fa-th-large",
-                            style=_icon_style_dict,
-                        ),
-                        # 收藏按鈕
-                        I(
-                            Class="fas fa-heart",
-                            style=_icon_style_dict,
-                        ),
-                        # 相似表符按鈕
-                        SPAN("似", style=_word_icon_style_dict),
-                        INPUT(
-                            style=dict(
-                                border="2px solid rgb(170, 170, 170)",
-                                borderRadius="20px",
-                                width="35%",
-                                marginLeft="5px",
-                                maxWidth="200px",
-                                outline="none",  # 不要顯示 foucs 的 outline
-                            )
-                        ),
-                        SPAN("新增", style=_send_add_new_tag_btn_style_dict),
-                        I(
-                            Class="fa fa-clone",
-                            style=_icon_style_dict,
-                        ),
-                    ],
-                    style=dict(
-                        float="left",
-                        width="100%",
-                    ),
+                # icon 按鈕: 複製表符
+                I(
+                    Class="far fa-copy",
+                    style=_icon_style_dict,
                 ),
-
-                # # 新稱標籤區域
-                # DIV(
-                #     [
-
-                #     ],
-                #     style=dict(float="right"),
-                # )
-            ]
+                # icon 按鈕: 檢視組合表符
+                I(
+                    Class="fas fa-th-large",
+                    style=_icon_style_dict,
+                ),
+                # icon 按鈕: 收藏(愛心)
+                I(
+                    Class="fas fa-heart",
+                    style=_icon_style_dict,
+                ),
+                # icon 按鈕: 搜尋相似表符
+                SPAN("似", style=_word_icon_style_dict),
+                INPUT(
+                    style=dict(
+                        border="2px solid rgb(170, 170, 170)",
+                        borderRadius="20px",
+                        width="35%",
+                        marginLeft="5px",
+                        maxWidth="200px",
+                        outline="none",  # 不要顯示 foucs 的 outline
+                    )
+                ),
+                # 輸入框: 輸入標籤字串列表
+                SPAN(
+                    "新增",
+                    style=_send_add_new_tag_btn_style_dict
+                ),
+                # icon 按鈕: 複製所有標籤字串
+                I(
+                    Class="fa fa-clone",
+                    style=_icon_style_dict,
+                ).bind("click", self.copy_tags_str),
+            ],
+            style=dict(
+                float="left",
+                width="100%",
+            ),
         )
 
     @property
@@ -292,6 +306,7 @@ class Emoji:
                 ),
                 TD(self.tag_spans_div)
             ],
+            emoji_id=self.id,
         )
         tr.emoji = self
         return tr
