@@ -67,7 +67,7 @@ class Tag:
         ev.preventDefault()
         # 跳出視窗確認是否要刪除標籤
         if not window.confirm(
-            f"確定要刪除 [{self.name}] 這個標籤嗎?"):
+                f"確定要刪除 [{self.name}] 這個標籤嗎?"):
             return
 
         # 移除標籤 SPAN 元素
@@ -131,6 +131,12 @@ class Emoji:
     created_at: str
     average_hash_str: str
     tag_list: List[Tag]
+
+    @property
+    def for_copy_url(self) -> str:
+        """ 複製用的表符網址
+        """
+        return f'*{self.url}*'
 
     @classmethod
     def from_dict(cls, emoji_dict: dict):
@@ -204,6 +210,12 @@ class Emoji:
         # 清空輸入框
         self.get_input().value = ''
 
+    def onclick_copy_emoji_url(self, ev):
+        """ 複製表符網址
+        """
+        copy_text_to_cliboard(self.for_copy_url)
+        show_alert_message(f"已複製表符")
+
     @property
     def img_div(self) -> DIV:
         """ 網格區域元素: 表符圖片
@@ -216,10 +228,11 @@ class Emoji:
                 src=self.url,
                 style=dict(
                     position="relative",
-                    display="inline-block"
+                    display="inline-block",
+                    cursor="pointer",
                 )
             ),
-        )
+        ).bind("click", self.onclick_copy_emoji_url)
 
     @property
     def iconTool_is_div(self) -> DIV:
@@ -259,7 +272,7 @@ class Emoji:
                 I(
                     Class="far fa-copy",
                     style=_icon_style_dict,
-                ),
+                ).bind("click", self.onclick_copy_emoji_url),
                 # icon 按鈕: 檢視組合表符
                 I(
                     Class="fas fa-th-large",
