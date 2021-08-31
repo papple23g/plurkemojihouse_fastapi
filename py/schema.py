@@ -467,7 +467,7 @@ class EmojiTablePageBtnArea:
     @property
     def page_btn_n(self):
         # 計算頁籤按鈕數量
-        return self.emoji_n // self.emojiQuery.page_size_n
+        return (self.emoji_n // self.emojiQuery.page_size_n) + (self.emoji_n % self.emojiQuery.page_size_n > 0)
 
     def a(self, page_n: int, is_current: bool = False, text: str = None) -> A:
         """ 一個頁籤超連結(A)元素
