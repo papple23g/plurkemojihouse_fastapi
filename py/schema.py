@@ -60,6 +60,25 @@ class Tag:
     name: str
     id: str = None
 
+    async def onrightclick_delete(self, ev):
+        """ 右鍵刪除標籤
+        """
+        # 防止跳出右鍵清單
+        ev.preventDefault()
+        # 跳出視窗確認是否要刪除標籤
+        if not window.confirm(
+            f"確定要刪除 [{self.name}] 這個標籤嗎?"):
+            return
+
+        # 移除標籤 SPAN 元素
+        ev.currentTarget.remove()
+
+        # 送出請求: 刪除標籤
+        await aio.ajax(
+            "DELETE",
+            f"/api/tag?id={self.id}",
+        )
+
     @property
     def span(self) -> SPAN:
         """ 藍色圓潤標籤元素
@@ -76,6 +95,7 @@ class Tag:
                     color='white'
                 )
             ),
+            tag_id=self.id,
             style=dict(
                 backgroundColor='rgba(50,100,256,0.7)',
                 border=None,
@@ -88,6 +108,9 @@ class Tag:
                 marginRight='5px',
                 lineHeight="2",
             )
+        ).bind(
+            # 綁定事件: 右鍵刪除標籤
+            'contextmenu', lambda ev: aio.run(self.onrightclick_delete(ev))
         )
 
 
