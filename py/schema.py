@@ -60,34 +60,6 @@ class Tag:
     name: str
     id: str = None
 
-    async def popup_add_tags_input_box(self, ev):
-        """
-        1. 在標籤元素上顯示新增標籤的輸入框
-        2. 按下確定後送出請求並刷新表符的標籤列表區塊
-        """
-
-        # 獲取輸入框內的新增標籤列表字串 (ex. "tag1,tag2,tag3")
-        tags_str: str = prompt('請輸入新增的標籤')
-        if not tags_str:
-            return
-
-        # 獲取被點擊的標籤 SPAN 元素
-        clicked_span_elt = ev.currentTarget
-        emoji_tr = clicked_span_elt.closest('tr')
-
-        # 自 TR 元素獲取表符物件
-        emoji: Emoji = emoji_tr.emoji
-        # 送出新增標籤請求後，獲取更新後的表符物件
-        emoji = await emoji.put_tags(tags_str)
-
-        # 更新表符標籤區塊: 清空並重新添加
-        tag_spans_div = clicked_span_elt.closest('div.tag_spans')
-        tag_spans_div.clear()
-        tag_spans_div <= emoji.tag_spans_div.children
-
-        # 更新 tr 元素上的表符物件
-        doc.select_one(f'[emoji-id="{emoji.id}"]').emoji = emoji
-
     @property
     def span(self) -> SPAN:
         """ 藍色圓潤標籤元素
@@ -116,7 +88,7 @@ class Tag:
                 marginRight='5px',
                 lineHeight="2",
             )
-        ).bind('click', lambda ev: aio.run(self.popup_add_tags_input_box(ev)))
+        )
 
 
 @dataclass
@@ -152,23 +124,62 @@ class Emoji:
             ],
         ))
 
-    def get_tr(self):
-        return doc.select_one(f'[emoji-id="{self.id}"]')
+    def update_emoji(self, emoji):
+        """ 更新表符物件
+        """
 
-    def get_emoji(self):
+        # 更新表符標籤區塊: 清空並重新添加
+        tag_spans_div = self.get_tr().select_one('div.tag_spans')
+        tag_spans_div.clear()
+        tag_spans_div <= emoji.tag_spans_div.children
+
+        # 更新 tr 元素上的表符物件
+        doc.select_one(f'tr[emoji-id="{self.id}"]').emoji = emoji
+
+    def get_tr(self) -> TR:
+        """ 獲取表符 TR 元素
+        """
+        return doc.select_one(f'tr[emoji-id="{self.id}"]')
+
+    def get_emoji(self) -> Emoji:
+        """ 獲取表符物件
+        """
         return self.get_tr().emoji
 
-    def get_tags_str(self):
-        """ 表符標籤字串
+    def get_tags_str(self) -> str:
+        """ 獲取表符標籤字串
         """
         return ', '.join([tag.name for tag in self.get_emoji().tag_list])
 
-    def copy_tags_str(self, ev):
+    def get_input(self) -> INPUT:
+        """ 獲取表符標籤輸入框 INPUT 元素
+        """
+        return doc.select_one(f'input[emoji-id="{self.id}"]')
+
+    def onclick_copy_tags_str(self, ev):
         """ 複製標籤字串
         """
         tags_str = self.get_tags_str()
         copy_text_to_cliboard(tags_str)
-        alert(f"已複製標籤：「{tags_str}」")
+        # alert(f"已複製標籤：「{tags_str}」")
+        show_alert_message(f"已複製標籤：「{tags_str}」")
+
+    async def onclick_add_new_tag(self, ev):
+        """ 新增標籤
+        """
+        # 自 [標籤輸入框] 獲取欲新增的標嵌字串
+        tags_str: str = self.get_input().value
+        if not tags_str:
+            return
+
+        # 新增標籤請求後，獲取更新後的表符物件
+        emoji = await self.get_emoji().put_tags(tags_str)
+
+        # 更新表符物件
+        self.update_emoji(emoji)
+
+        # 清空輸入框
+        self.get_input().value = ''
 
     @property
     def img_div(self) -> DIV:
@@ -238,6 +249,7 @@ class Emoji:
                 ),
                 # icon 按鈕: 搜尋相似表符
                 SPAN("似", style=_word_icon_style_dict),
+                # 輸入框: 輸入標籤字串列表
                 INPUT(
                     style=dict(
                         border="2px solid rgb(170, 170, 170)",
@@ -246,18 +258,20 @@ class Emoji:
                         marginLeft="5px",
                         maxWidth="200px",
                         outline="none",  # 不要顯示 foucs 的 outline
-                    )
+                        paddingLeft="12px",
+                    ),
+                    emoji_id=self.id,
                 ),
-                # 輸入框: 輸入標籤字串列表
+                # 按鈕: 新增標籤
                 SPAN(
                     "新增",
                     style=_send_add_new_tag_btn_style_dict
-                ),
+                ).bind("click", lambda ev: aio.run(self.onclick_add_new_tag(ev))),
                 # icon 按鈕: 複製所有標籤字串
                 I(
                     Class="fa fa-clone",
                     style=_icon_style_dict,
-                ).bind("click", self.copy_tags_str),
+                ).bind("click", self.onclick_copy_tags_str),
             ],
             style=dict(
                 float="left",

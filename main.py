@@ -145,7 +145,8 @@ init(app)
 if __name__ == '__main__':
     import uvicorn
 
-    HOST: str = '127.0.0.1'
+    HOST: str = '0.0.0.0'
+    # HOST: str = '127.0.0.1'
     PORT: int = 8000
 
     logger.info(f'首頁 請照訪：http://{HOST}:{PORT}/search')
