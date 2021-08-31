@@ -249,7 +249,7 @@ class Emoji:
                 ),
                 # icon 按鈕: 搜尋相似表符
                 SPAN("似", style=_word_icon_style_dict),
-                # 輸入框: 輸入標籤字串列表
+                # 輸入框: 輸入標籤字串列表 (按下 Enter 可直接新增標籤)
                 INPUT(
                     style=dict(
                         border="2px solid rgb(170, 170, 170)",
@@ -261,7 +261,7 @@ class Emoji:
                         paddingLeft="12px",
                     ),
                     emoji_id=self.id,
-                ),
+                ).bind("keydown", lambda ev: hasattr(ev, 'key') and (ev.key == "Enter") and aio.run(self.onclick_add_new_tag(ev))),
                 # 按鈕: 新增標籤
                 SPAN(
                     "新增",
