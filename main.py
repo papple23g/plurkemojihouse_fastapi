@@ -41,7 +41,8 @@ async def 獲取表符列表(
         *,
         page_n: conint(ge=1) = Query(1, description="頁數"),
         page_size_n: int = Query(30, description="每頁顯示數量"),
-        tags_str: str = None,):
+        tags_str: str = None,
+        similar_emoji_id: str = None,):
 
     # 建立表符查詢池: 若有指定查詢的標籤，就先過濾出皆含有全部這些標籤(AND)的表符
     if tags_str:
@@ -62,6 +63,21 @@ async def 獲取表符列表(
             set(emoji.id for emoji in emoji_list) for emoji_list in emoji_list_list])
         # 獲取符合所有標籤的表符查詢池
         emoji_query = Emoji.filter(id__in=emoji_id_set)
+    # 若有指定查詢的相似表符
+    elif similar_emoji_id:
+        # 獲取相似表符
+        emoji = await Emoji.filter(id=similar_emoji_id).first()
+        if emoji is None:
+            return ApiEmojiOut()
+
+        # 獲取相似表符的表符查詢池
+        similar_emoji_list = await Emoji.get_similar_emoji_list(
+            emoji.average_hash_str)
+        return ApiEmojiOut(
+            emoji_list=similar_emoji_list,
+            emoji_n=len(similar_emoji_list),
+        )
+
     # 若不指定查詢標籤，則直接查詢所有表符
     else:
         emoji_query = Emoji.all()

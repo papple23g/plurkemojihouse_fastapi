@@ -5,6 +5,8 @@ from tortoise import fields, models
 from tortoise.contrib.pydantic import pydantic_model_creator
 from pydantic import BaseModel
 from typing import List
+from tortoise.query_utils import Prefetch
+
 from schema import EmojiAddTagsIn
 
 
@@ -51,10 +53,10 @@ class Emoji(models.Model):
             cls,
             average_hash_str: str,
             output_n: int = 20) -> List[Emoji]:
-        """ 獲取相似圖片的表符 (排除自己)
+        """ 獲取相似圖片的表符
         """
         # 獲取所有表符平均哈希值字典 → 產生 DF 資料表
-        emoji_dict_list = await Emoji.exclude(average_hash_str=average_hash_str).values('id', 'average_hash_str')
+        emoji_dict_list = await Emoji.all().values('id', 'average_hash_str')
         emoji_df = pd.DataFrame(emoji_dict_list)
         emoji_df['average_hash'] = emoji_df['average_hash_str'].apply(
             lambda x: imagehash.hex_to_hash(x))
@@ -63,7 +65,9 @@ class Emoji(models.Model):
             imagehash.hex_to_hash(average_hash_str)
 
         return [
-            await Emoji.get(id=emoji_id)
+            await Emoji.get(id=emoji_id).prefetch_related(
+                Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
+            )
             for emoji_id in emoji_df.sort_values(by=['average_hash_diff_int']).head(output_n)['id']
         ]
 

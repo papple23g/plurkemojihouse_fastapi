@@ -17,6 +17,7 @@ class EmojiQuery:
     page_n: int = 1
     page_size_n: int = 30
     tags_str: str = None
+    similar_emoji_id: str = None
 
     @classmethod
     def from_url(cls, url: str) -> EmojiQuery:
@@ -29,13 +30,19 @@ class EmojiQuery:
             EmojiQuery
         """
         url_query_dict = get_url_query_dict(url)
+
         tags_str = url_query_dict.get('tags_str', None)
         tags_str: Optional[str] = tags_str and str(tags_str)
+
+        similar_emoji_id = url_query_dict.get('similar_emoji_id', None)
+        similar_emoji_id: Optional[str] = similar_emoji_id and str(
+            similar_emoji_id)
         return cls(
             page_n=int(url_query_dict.get('page_n', cls.page_n)),
             page_size_n=int(url_query_dict.get(
                 'page_size_n', cls.page_size_n)),
             tags_str=tags_str,
+            similar_emoji_id=similar_emoji_id,
         )
 
     def to_url_query_str(self, page_n: int = None) -> str:
@@ -284,7 +291,11 @@ class Emoji:
                     style=_icon_style_dict,
                 ),
                 # icon 按鈕: 搜尋相似表符
-                SPAN("似", style=_word_icon_style_dict),
+                A(
+                    SPAN("似", style=_word_icon_style_dict),
+                    href=f"/search?similar_emoji_id={self.id}",
+                    style=dict(textDecoration='none'),
+                ),
                 # 輸入框: 輸入標籤字串列表 (按下 Enter 可直接新增標籤)
                 INPUT(
                     style=dict(
