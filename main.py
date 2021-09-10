@@ -1,4 +1,5 @@
-from fastapi.params import Query
+import json
+from fastapi.params import Header, Query
 from pydantic.types import conint
 import _pickle as cPickle
 from dataclasses import dataclass
@@ -36,7 +37,7 @@ async def 表符搜尋頁面(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/api/emoji", response_model=ApiEmojiOut, tags=['表符'])
+@app.get("/api/emoji", response_model=List[EmojiOut], tags=['表符'])
 async def 獲取表符列表(
         *,
         page_n: conint(ge=1) = Query(1, description="頁數"),
@@ -45,7 +46,7 @@ async def 獲取表符列表(
         tag_str: str = None,
         similar_emoji_id: str = None,):
 
-    # 若請求是源於點擊[標籤搜尋結果區]的其中一個標籤時，就以搜尋此標籤為主
+    # 若請求是源於點擊 [標籤搜尋結果區] 的其中一個標籤時，就以搜尋此標籤為主
     if tag_str:
         tags_str = tag_str
 
@@ -73,16 +74,19 @@ async def 獲取表符列表(
         # 獲取相似表符
         emoji = await Emoji.filter(id=similar_emoji_id).first()
         if emoji is None:
-            return ApiEmojiOut()
+            return []
 
         # 獲取相似表符的表符查詢池
         similar_emoji_list = await Emoji.get_similar_emoji_list(
             emoji.average_hash_str)
-        return ApiEmojiOut(
-            emoji_list=similar_emoji_list,
-            emoji_n=len(similar_emoji_list),
-        )
 
+        return JSONResponse(
+            content=[
+                json.loads(EmojiOut.from_orm(emoji).json())
+                for emoji in similar_emoji_list
+            ],
+            headers={"emoji_n": str(len(similar_emoji_list))},
+        )
     # 若不指定查詢標籤，則直接查詢所有表符
     else:
         emoji_query = Emoji.all()
@@ -101,9 +105,12 @@ async def 獲取表符列表(
         .prefetch_related(
             Prefetch("_tag_list", Tag.all(), to_attr="tag_list")
         )
-    return ApiEmojiOut(
-        emoji_list=[EmojiOut.from_orm(emoji) for emoji in emoji_list],
-        emoji_n=emoji_n,
+    return JSONResponse(
+        content=[
+            json.loads(EmojiOut.from_orm(emoji).json())
+            for emoji in emoji_list
+        ],
+        headers={"emoji_n": str(emoji_n)},
     )
 
 

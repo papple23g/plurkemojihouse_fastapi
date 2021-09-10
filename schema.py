@@ -101,12 +101,3 @@ class EmojiAddTagsIn(BaseModel):
             List[str]
         """
         return tags_str_2_tag_str_list(self.tags_str)
-
-
-class ApiEmojiOut(BaseModel):
-    emoji_list: List[EmojiOut] = []
-    emoji_n: int = 0
-
-
-class ApiTagOut(BaseModel):
-    tag_list: List[TagOut] = []

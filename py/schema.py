@@ -4,7 +4,7 @@ from dataclasses import dataclass, asdict
 from browser.html import *
 from browser import bind, window, alert, ajax, aio, prompt, doc
 import json
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 
 from py.utils import *
 Emoji = None
@@ -178,14 +178,6 @@ class Tag:
                 style=(dict(textDecoration='none',)),
             )
         )
-
-
-@dataclass
-class ApiEmojiOut:
-    """ 表符列表結果
-    """
-    emoji_list: List[Emoji]
-    emoji_n: int
 
 
 @dataclass
@@ -458,16 +450,16 @@ class Emoji:
         return tr
 
     @classmethod
-    async def get_apiEmojiOut(
+    async def get_emoji_list_and_emoji_n_tuple(
             cls,
-            emojiQuery: EmojiQuery) -> ApiEmojiOut:
+            emojiQuery: EmojiQuery) -> Tuple[List[Emoji], int]:
         """ 根據搜尋條件取得表符列表
 
         Args:
             emojiQuery (EmojiQuery): 搜尋參數
 
         Returns:
-            List[Emoji]
+            Tuple[List[Emoji], int]
         """
 
         # 建立搜尋表單字典
@@ -475,14 +467,15 @@ class Emoji:
             k: v for k, v in asdict(emojiQuery).items() if v is not None
         }
 
-        res_dict = json.loads((await aio.get("/api/emoji", data=emojiQuery_dict)).data)
+        # 取得表符列表(自 res.body 中取得) 以及 表符總數(自 res.headers 中取得)
+        get_emojis_res = (await aio.get("/api/emoji", data=emojiQuery_dict))
+        emoji_n = int(get_emojis_res.response_headers.get("emoji_n", 0))
+        emoji_dict_list = json.loads(get_emojis_res.data)
 
-        return ApiEmojiOut(
-            emoji_list=[
-                cls.from_dict(emoji_dict)
-                for emoji_dict in res_dict['emoji_list']],
-            emoji_n=res_dict['emoji_n'],
-        )
+        return [
+            cls.from_dict(emoji_dict)
+            for emoji_dict in emoji_dict_list
+        ], emoji_n
 
     async def put_tags(self, tags_str: str) -> Emoji:
         """ 更新表符標籤
@@ -497,9 +490,7 @@ class Emoji:
             "PUT",
             f"/api/emoji?id={self.id}",
             format="binary",
-            data=json.dumps(dict(
-                tags_str=tags_str)
-            ))).data)
+            data=json.dumps(dict(tags_str=tags_str)))).data)
         return Emoji.from_dict(emoji_dict)
 
 

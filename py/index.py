@@ -20,13 +20,13 @@ async def main():
     doc <= (await tag_search_result_div(emojiQuery=emojiQuery))
 
     # 獲取表符物件列表與結果數量
-    apiEmojiOut = await Emoji.get_apiEmojiOut(
+    emoji_list, emoji_n = await Emoji.get_emoji_list_and_emoji_n_tuple(
         emojiQuery=emojiQuery
     )
 
     # 生成表符列表表格
     emojiTable = EmojiTable(
-        emoji_list=apiEmojiOut.emoji_list
+        emoji_list=emoji_list
     )
 
     doc <= emojiTable.table_div
@@ -34,7 +34,7 @@ async def main():
     # 生成頁籤
     emojiTablePageBtnArea = EmojiTablePageBtnArea(
         emojiQuery=emojiQuery,
-        emoji_n=apiEmojiOut.emoji_n,
+        emoji_n=emoji_n,
     )
 
     doc <= emojiTablePageBtnArea.div
