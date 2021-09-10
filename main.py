@@ -36,13 +36,18 @@ async def 表符搜尋頁面(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/api/emoji", response_model=ApiEmojiOut)
+@app.get("/api/emoji", response_model=ApiEmojiOut, tags=['表符'])
 async def 獲取表符列表(
         *,
         page_n: conint(ge=1) = Query(1, description="頁數"),
         page_size_n: int = Query(30, description="每頁顯示數量"),
         tags_str: str = None,
+        tag_str: str = None,
         similar_emoji_id: str = None,):
+
+    # 若請求是源於點擊[標籤搜尋結果區]的其中一個標籤時，就以搜尋此標籤為主
+    if tag_str:
+        tags_str = tag_str
 
     # 建立表符查詢池: 若有指定查詢的標籤，就先過濾出皆含有全部這些標籤(AND)的表符
     if tags_str:
@@ -102,7 +107,7 @@ async def 獲取表符列表(
     )
 
 
-@app.post("/api/emoji")
+@app.post("/api/emoji", tags=['表符'])
 async def 新增表符(emojiIn: EmojiIn):
     emoji, _ = await Emoji.get_or_create(
         url=emojiIn.url,
@@ -114,14 +119,14 @@ async def 新增表符(emojiIn: EmojiIn):
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.post("/api/emoji_list")
+@app.post("/api/emoji_list", tags=['表符'])
 async def 批量新增表符列表(emojiIn_list: List[EmojiIn]):
     for emojiIn in emojiIn_list:
         await 新增表符(emojiIn)
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.delete("/api/emoji")
+@app.delete("/api/emoji", tags=['表符'])
 async def 刪除表符(id: UUID):
 
     emoji = await Emoji.filter(id=id).first()
@@ -130,15 +135,7 @@ async def 刪除表符(id: UUID):
     return JSONResponse(status_code=status.HTTP_200_OK)
 
 
-@app.delete("/api/tag")
-async def 刪除標籤(id: UUID):  # .### 待測試
-    tag = await Tag.filter(id=id).first()
-    if tag:
-        await tag.delete()
-    return JSONResponse(status_code=status.HTTP_200_OK)
-
-
-@app.put("/api/emoji", response_model=EmojiOut)
+@app.put("/api/emoji", response_model=EmojiOut, tags=['表符'])
 async def 更新表符_追加標籤(
         *,
         id: UUID = Query(..., description='表符 ID'),
@@ -156,6 +153,25 @@ async def 更新表符_追加標籤(
     return EmojiOut.from_orm(emoji)
 
 
+@app.get("/api/tag", response_model=List[TagOut], tags=['標籤'])
+async def 獲取標籤列表(
+        *,
+        tags_str: str = None,):
+
+    # 獲取點位字串列表
+    tag_str_list = tags_str_2_tag_str_list(tags_str)
+    # 獲取標籤列表 (模糊搜尋 & 聯集)
+    tag_list = await Tag.filter(
+        Q(
+            *[
+                Q(name__icontains=tag_str)
+                for tag_str in tag_str_list
+            ],
+            join_type='OR'
+        )
+    ).all()
+    return [TagOut.from_orm(tag) for tag in tag_list]
+
 init(app)
 
 if __name__ == '__main__':
@@ -165,8 +181,8 @@ if __name__ == '__main__':
     # HOST: str = '127.0.0.1'
     PORT: int = 8000
 
-    logger.info(f'首頁 請照訪：http://{HOST}:{PORT}/search')
-    logger.info(f'API Docs 請照訪：http://{HOST}:{PORT}/docs')
+    logger.info(f'首頁 請照訪：http://127.0.0.1:{PORT}/search')
+    logger.info(f'API Docs 請照訪：http://127.0.0.1:{PORT}/docs')
 
     uvicorn.run(
         f'{str(Path(__file__).stem)}:app',

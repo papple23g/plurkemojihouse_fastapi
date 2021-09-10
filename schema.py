@@ -106,3 +106,7 @@ class EmojiAddTagsIn(BaseModel):
 class ApiEmojiOut(BaseModel):
     emoji_list: List[EmojiOut] = []
     emoji_n: int = 0
+
+
+class ApiTagOut(BaseModel):
+    tag_list: List[TagOut] = []

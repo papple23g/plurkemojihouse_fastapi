@@ -1,9 +1,10 @@
+from string import ascii_letters
+import random as ran
 from dataclasses import dataclass, asdict
 from browser.html import *
 from browser import bind, window, alert, ajax, aio, prompt, doc
 import json
 from typing import List, Dict, Any, Optional, Union
-import inspect
 
 from py.utils import *
 Emoji = None
@@ -13,10 +14,18 @@ EmojiQuery = None
 @dataclass
 class EmojiQuery:
     """ 查詢表符參數
+
+    Args:
+        page_n(int): 當前頁數 Defaults to 1
+        page_size_n(int): 每頁顯示結果數量. Defaults to 30
+        tags_str(str): 輸入框或表格標籤的搜尋標籤文字. Defaults to None
+        tag_str(str): 在標籤搜尋結果被點擊的標籤名稱，若有值則搜索標籤將以此為主. Defaults to None
+        similar_emoji_id(str): 搜尋相似表符的表符 ID. Defaults to None
     """
     page_n: int = 1
     page_size_n: int = 30
     tags_str: str = None
+    tag_str: str = None
     similar_emoji_id: str = None
 
     @classmethod
@@ -34,30 +43,42 @@ class EmojiQuery:
         tags_str = url_query_dict.get('tags_str', None)
         tags_str: Optional[str] = tags_str and str(tags_str)
 
+        tag_str = url_query_dict.get('tag_str', None)
+        tag_str: Optional[str] = tag_str and str(tag_str)
+
         similar_emoji_id = url_query_dict.get('similar_emoji_id', None)
         similar_emoji_id: Optional[str] = similar_emoji_id and str(
             similar_emoji_id)
+
         return cls(
             page_n=int(url_query_dict.get('page_n', cls.page_n)),
             page_size_n=int(url_query_dict.get(
                 'page_size_n', cls.page_size_n)),
             tags_str=tags_str,
+            tag_str=tag_str,
             similar_emoji_id=similar_emoji_id,
         )
 
-    def to_url_query_str(self, page_n: int = None) -> str:
-        """取得查詢表符參數的 url query string
+    def _to_url_query_str(self, **update_kw_dict) -> str:
+        """ 取得查詢表符參數的 url query string
 
-        Args:
-            page_n (int, optional): 指定頁籤編號. Defaults to None.
+        **update_kw_dict : 欲更新的參數字典
 
         Returns:
             str
         """
-        url_query_dict = asdict(self)
-        if page_n:
-            url_query_dict['page_n'] = page_n
+        url_query_dict = {**asdict(self), **update_kw_dict}
         return '&'.join([f'{k}={v}' for k, v in url_query_dict.items() if v])
+
+    def to_url(self, **update_kw_dict) -> str:
+        """ 取得查詢表符參數的 url
+
+        **update_kw_dict : 欲更新的參數字典
+
+        Returns:
+            str
+        """
+        return '/search?' + self._to_url_query_str(**update_kw_dict)
 
 
 @dataclass
@@ -87,7 +108,7 @@ class Tag:
         )
 
     @property
-    def span(self) -> SPAN:
+    def _span(self) -> SPAN:
         """ 藍色圓潤標籤元素
 
         Returns:
@@ -114,10 +135,48 @@ class Tag:
                 marginTop='10px',
                 marginRight='5px',
                 lineHeight="2",
+                # 隨著寬度自動換行
+                lineBreak='anywhere',
+            )
+        )
+
+    @property
+    def span(self) -> SPAN:
+        """ 表符表格中的標籤元素
+
+        Returns:
+            SPAN
+        """
+        return SPAN(
+            A(
+                self._span,
+                href=EmojiQuery(tags_str=self.name).to_url(),
+                # 隱藏超連結底線
+                style=(dict(textDecoration='none',)),
             )
         ).bind(
             # 綁定事件: 右鍵刪除標籤
             'contextmenu', lambda ev: aio.run(self.onrightclick_delete(ev))
+        )
+
+    @property
+    def search_result_span(self) -> SPAN:
+        """ 標籤搜尋結果中的標籤元素
+
+        Returns:
+            SPAN
+        """
+
+        # 分析網址查詢參數字典
+        emojiQuery = EmojiQuery.from_url(window.location.href)
+
+        return SPAN(
+            A(
+                self._span,
+                href=emojiQuery.to_url(tag_str=self.name),
+                # 隱藏超連結底線
+                style=(dict(textDecoration='none',)),
+            )
         )
 
 
@@ -280,20 +339,21 @@ class Emoji:
                     Class="far fa-copy",
                     style=_icon_style_dict,
                 ).bind("click", self.onclick_copy_emoji_url),
-                # icon 按鈕: 檢視組合表符
-                I(
-                    Class="fas fa-th-large",
-                    style=_icon_style_dict,
-                ),
-                # icon 按鈕: 收藏(愛心)
+                # icon 按鈕: 收藏(愛心) ##
                 I(
                     Class="fas fa-heart",
+                    style=_icon_style_dict,
+                ),
+                # icon 按鈕: 檢視組合表符 ##
+                I(
+                    Class="fas fa-th-large",
                     style=_icon_style_dict,
                 ),
                 # icon 按鈕: 搜尋相似表符
                 A(
                     SPAN("似", style=_word_icon_style_dict),
                     href=f"/search?similar_emoji_id={self.id}",
+                    # 隱藏超連結底線
                     style=dict(textDecoration='none'),
                 ),
                 # 輸入框: 輸入標籤字串列表 (按下 Enter 可直接新增標籤)
@@ -385,7 +445,6 @@ class Emoji:
         """
         tr = TR(
             [
-                #.###
                 TD(
                     self.iconTool_is_div,
                     Class="w3-light-grey",
@@ -544,8 +603,7 @@ class EmojiTablePageBtnArea:
         text = text if text else str(page_n)
         return A(
             text,
-            href='/search?' +
-            self.emojiQuery.to_url_query_str(page_n=page_n),
+            href=self.emojiQuery.to_url(page_n=page_n),
             Class=" ".join(
                 self.hover_or_current_btn_class_str_list if is_current else self.btn_class_str_list
             ),
@@ -660,3 +718,150 @@ class EmojiTablePageBtnArea:
             ],
             Class="w3-container",
         )
+
+
+def emoji_search_form_div() -> DIV:
+    """ 表符搜尋表單 DIV 元素
+
+    Returns:
+        DIV
+    """
+    return DIV(
+        [
+            # 第一行搜尋元素:輸入框與送出按鈕
+            DIV(
+                [
+                    # 搜尋標籤輸入文字框
+                    INPUT(
+                        type="search",
+                        placeholder="輸入角色/作品名/動詞/形容詞...",
+                        id="search_tags_str_input",
+                        style=dict(
+                            border='1px solid rgb(204, 204, 204)',
+                            borderRadius='15px',
+                            outline='none',
+                            height='35px',
+                            padding='10px',
+                            marginRight='7px',
+                            width='250px',
+                        ),
+                    ),
+                    # 送出搜尋按鈕
+                    BUTTON(
+                        "搜尋",
+                        style=dict(
+                            fontFamily="微軟正黑體",
+                            marginBottom="7px",
+                        ),
+                    ),
+                ],
+            ),
+            # 第二行搜尋元素: 進階搜尋設定區域
+            DIV(
+                [
+                    # 勾選元素: 顯示我的收藏
+                    DIV(
+                        [
+                            INPUT(type="checkbox"),
+                            SPAN(
+                                " 顯示我的收藏",
+                                Class='noselect',
+                                style=dict(
+                                    fontWeight="bold",
+                                ),
+                            ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
+                        ],
+                        style=dict(
+                            cursor="pointer",
+                            float="left",
+                            marginRight="15px",
+                        ),
+                    ),
+
+                    # 勾選元素: 組合表符
+                    DIV(
+                        [
+                            INPUT(type="checkbox"),
+                            SPAN(
+                                " 組合表符",
+                                Class='noselect',
+                                style=dict(
+                                    fontWeight="bold",
+                                )
+                            ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
+                        ],
+                        style=dict(
+                            cursor="pointer",
+                            float="left",
+                            marginRight="15px",
+                        )
+                    ),
+
+                    # 勾選元素: 組合表符
+                    DIV(
+                        [
+                            SPAN(
+                                " 檢視模式: ",
+                                Class='noselect',
+                                style=dict(
+                                    fontWeight="bold",
+                                )
+                            ),
+                            INPUT(
+                                type="radio",
+                                name="view_mode",
+                                value="list",
+                                checked=True,
+                            )+SPAN(" 列表", Class="noselect"),
+                            INPUT(
+                                type="radio",
+                                name="view_mode",
+                                value="grid",
+                                marginLeft="10px",
+                            )+SPAN(" 網格", Class="noselect"),
+                        ],
+                        style=dict(cursor="pointer")
+                    )
+
+                ],
+                style=dict(marginTop="15px")
+            )
+        ],
+        style=dict(
+            border="1px solid rgb(204, 204, 204)",
+            borderRadius="10px",
+            margin="5px 20px",
+            boxShadow="grey 1px 1px 3px",
+            padding="20px 20px",
+            width="-webkit-fill-available",
+        )
+    )
+
+
+async def tag_search_result_div(emojiQuery: EmojiQuery) -> DIV:
+    """ 標籤搜尋結果 DIV 元素
+
+    Args:
+        emojiQuery (EmojiQuery)
+
+    Returns:
+        DIV
+    """
+
+    if not emojiQuery.tags_str:
+        return DIV()
+
+    tag_dict_list = json.loads((await aio.get(
+        f"/api/tag",
+        data=dict(tags_str=emojiQuery.tags_str)
+    )).data)
+    # tag_dict_list = tag_res_dict['tag_list']
+
+    return DIV(
+        [
+            Tag(**tag_dict).search_result_span
+            for tag_dict in tag_dict_list
+        ],
+        Class="w3-container",
+        style=dict(margin="17px"),
+    )
