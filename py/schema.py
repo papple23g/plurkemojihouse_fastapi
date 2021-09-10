@@ -29,11 +29,11 @@ class EmojiQuery:
     similar_emoji_id: str = None
 
     @classmethod
-    def from_url(cls, url: str) -> EmojiQuery:
+    def from_url(cls, url: str = window.location.href) -> EmojiQuery:
         """ 以 url 取得查詢表符參數
 
         Args:
-            url (str)
+            url (str): 分析自查詢表符參數的 url. Defaults to window.location.href
 
         Returns:
             EmojiQuery
@@ -168,7 +168,7 @@ class Tag:
         """
 
         # 分析網址查詢參數字典
-        emojiQuery = EmojiQuery.from_url(window.location.href)
+        emojiQuery = EmojiQuery.from_url()
 
         return SPAN(
             A(
@@ -711,122 +711,149 @@ class EmojiTablePageBtnArea:
         )
 
 
-def emoji_search_form_div() -> DIV:
-    """ 表符搜尋表單 DIV 元素
+@dataclass
+class EmojiSearchForm:
+    """ 表符搜尋表單
 
-    Returns:
-        DIV
+    Attributes:
+        emojiQuery(EmojiQuery):  輸入參數填入表單資料網頁元素, 通常來自於網址的參數
+
     """
-    return DIV(
-        [
-            # 第一行搜尋元素:輸入框與送出按鈕
-            DIV(
-                [
-                    # 搜尋標籤輸入文字框
-                    INPUT(
-                        type="search",
-                        placeholder="輸入角色/作品名/動詞/形容詞...",
-                        id="search_tags_str_input",
-                        style=dict(
-                            border='1px solid rgb(204, 204, 204)',
-                            borderRadius='15px',
-                            outline='none',
-                            height='35px',
-                            padding='10px',
-                            marginRight='7px',
-                            width='250px',
-                        ),
-                    ),
-                    # 送出搜尋按鈕
-                    BUTTON(
-                        "搜尋",
-                        style=dict(
-                            fontFamily="微軟正黑體",
-                            marginBottom="7px",
-                        ),
-                    ),
-                ],
-            ),
-            # 第二行搜尋元素: 進階搜尋設定區域
-            DIV(
-                [
-                    # 勾選元素: 顯示我的收藏
-                    DIV(
-                        [
-                            INPUT(type="checkbox"),
-                            SPAN(
-                                " 顯示我的收藏",
-                                Class='noselect',
-                                style=dict(
-                                    fontWeight="bold",
-                                ),
-                            ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
-                        ],
-                        style=dict(
-                            cursor="pointer",
-                            float="left",
-                            marginRight="15px",
-                        ),
-                    ),
+    emojiQuery: EmojiQuery
 
-                    # 勾選元素: 組合表符
-                    DIV(
-                        [
-                            INPUT(type="checkbox"),
-                            SPAN(
-                                " 組合表符",
-                                Class='noselect',
-                                style=dict(
-                                    fontWeight="bold",
-                                )
-                            ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
-                        ],
-                        style=dict(
-                            cursor="pointer",
-                            float="left",
-                            marginRight="15px",
-                        )
-                    ),
+    def onclick_send_query(self, ev) -> EmojiQuery:
+        """ 自表單 DIV 元素取得查詢表符參數
+        """
+        window.location.href = EmojiQuery(
+            tags_str=doc['search_tags_str_input'].value,
+        ).to_url()
 
-                    # 勾選元素: 組合表符
-                    DIV(
-                        [
-                            SPAN(
-                                " 檢視模式: ",
-                                Class='noselect',
-                                style=dict(
-                                    fontWeight="bold",
-                                )
+    @property
+    def div(self) -> DIV:
+        """ 表符搜尋表單 DIV 元素
+
+        Returns:
+            DIV
+        """
+        return DIV(
+            [
+                # 第一行搜尋元素:輸入框與送出按鈕
+                DIV(
+                    [
+                        # 搜尋標籤輸入文字框
+                        INPUT(
+                            value=(self.emojiQuery.tags_str or ""),
+                            type="search",
+                            placeholder="輸入角色/作品名/動詞/形容詞...",
+                            id="search_tags_str_input",
+                            style=dict(
+                                border='1px solid rgb(204, 204, 204)',
+                                borderRadius='15px',
+                                outline='none',
+                                height='35px',
+                                padding='10px',
+                                marginRight='7px',
+                                width='250px',
                             ),
-                            INPUT(
-                                type="radio",
-                                name="view_mode",
-                                value="list",
-                                checked=True,
-                            )+SPAN(" 列表", Class="noselect"),
-                            INPUT(
-                                type="radio",
-                                name="view_mode",
-                                value="grid",
-                                marginLeft="10px",
-                            )+SPAN(" 網格", Class="noselect"),
-                        ],
-                        style=dict(cursor="pointer")
-                    )
+                        ).bind(
+                            # 綁定事件: 按下 Enter 時觸發按下 [搜尋] 按鈕送出查詢
+                            "keydown",
+                            lambda ev:
+                                hasattr(ev, 'key')
+                                and (ev.key == "Enter")
+                                and doc['search_tags_str_button'].click()
+                        ),
+                        # 送出搜尋按鈕
+                        BUTTON(
+                            "搜尋",
+                            id="search_tags_str_button",
+                            style=dict(
+                                fontFamily="微軟正黑體",
+                                marginBottom="7px",
+                            ),
+                        ).bind("click", self.onclick_send_query),
+                    ],
+                ),
+                # 第二行搜尋元素: 進階搜尋設定區域
+                DIV(
+                    [
+                        # 勾選元素: 顯示我的收藏
+                        DIV(
+                            [
+                                INPUT(type="checkbox"),
+                                SPAN(
+                                    " 顯示我的收藏",
+                                    Class='noselect',
+                                    style=dict(
+                                        fontWeight="bold",
+                                    ),
+                                ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
+                            ],
+                            style=dict(
+                                cursor="pointer",
+                                float="left",
+                                marginRight="15px",
+                            ),
+                        ),
 
-                ],
-                style=dict(marginTop="15px")
+                        # 勾選元素: 組合表符
+                        DIV(
+                            [
+                                INPUT(type="checkbox"),
+                                SPAN(
+                                    " 組合表符",
+                                    Class='noselect',
+                                    style=dict(
+                                        fontWeight="bold",
+                                    )
+                                ).bind("click", lambda ev:ev.currentTarget.parent.select_one('input').click()),
+                            ],
+                            style=dict(
+                                cursor="pointer",
+                                float="left",
+                                marginRight="15px",
+                            )
+                        ),
+
+                        # 勾選元素: 組合表符
+                        DIV(
+                            [
+                                SPAN(
+                                    " 檢視模式: ",
+                                    Class='noselect',
+                                    style=dict(
+                                        fontWeight="bold",
+                                    )
+                                ),
+                                INPUT(
+                                    type="radio",
+                                    name="view_mode",
+                                    value="list",
+                                    checked=True,
+                                )+SPAN(" 列表", Class="noselect"),
+                                INPUT(
+                                    type="radio",
+                                    name="view_mode",
+                                    value="grid",
+                                    marginLeft="10px",
+                                )+SPAN(" 網格", Class="noselect"),
+                            ],
+                            style=dict(cursor="pointer")
+                        )
+
+                    ],
+                    style=dict(marginTop="15px")
+                )
+            ],
+            style=dict(
+                border="1px solid rgb(204, 204, 204)",
+                borderRadius="10px",
+                margin="5px 20px",
+                boxShadow="grey 1px 1px 3px",
+                padding="20px 20px",
+                width="-webkit-fill-available",
             )
-        ],
-        style=dict(
-            border="1px solid rgb(204, 204, 204)",
-            borderRadius="10px",
-            margin="5px 20px",
-            boxShadow="grey 1px 1px 3px",
-            padding="20px 20px",
-            width="-webkit-fill-available",
         )
-    )
 
 
 async def tag_search_result_div(emojiQuery: EmojiQuery) -> DIV:

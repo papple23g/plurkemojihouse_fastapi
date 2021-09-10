@@ -10,11 +10,11 @@ from py.utils import *
 async def main():
 
     # 分析網址查詢參數字典
-    emojiQuery = EmojiQuery.from_url(window.location.href)
+    emojiQuery = EmojiQuery.from_url()
     # print(emojiQuery)
 
-    # 查詢表符表單區域 #.### 填入 emojiQuery
-    doc <= emoji_search_form_div()
+    # 查詢表符表單區域
+    doc <= EmojiSearchForm(emojiQuery=emojiQuery).div
 
     # 標籤查詢結果區域
     doc <= (await tag_search_result_div(emojiQuery=emojiQuery))
