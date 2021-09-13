@@ -87,6 +87,7 @@ class Tag:
     """
     name: str
     id: str = None
+    emoji_id: str = None
 
     async def onrightclick_delete(self, ev):
         """ 右鍵刪除標籤
@@ -104,7 +105,7 @@ class Tag:
         # 送出請求: 刪除標籤
         await aio.ajax(
             "DELETE",
-            f"/api/tag?id={self.id}",
+            f"/api/emoji/tag?id={self.emoji_id}&tag_id={self.id}",
         )
 
     @property
@@ -206,7 +207,11 @@ class Emoji:
             created_at=emoji_dict['created_at'],
             average_hash_str=emoji_dict['average_hash_str'],
             tag_list=[
-                Tag(**dict(id=tag_dict['id'], name=tag_dict['name']))
+                Tag(**dict(
+                    id=tag_dict['id'],
+                    name=tag_dict['name'],
+                    emoji_id=emoji_dict['id'],
+                ))
                 for tag_dict in emoji_dict['tag_list']
             ],
         ))

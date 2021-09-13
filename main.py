@@ -160,6 +160,21 @@ async def 更新表符_追加標籤(
     return EmojiOut.from_orm(emoji)
 
 
+@app.delete("/api/emoji/tag", tags=['表符'])
+async def 刪除表符下的標籤(
+        *,
+        id: UUID = Query(..., description='表符 ID'),
+        tag_id: UUID = Query(..., description='標籤 ID'),):
+
+    emoji = await Emoji.filter(id=id).first()
+    if not emoji:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND)
+
+    await emoji.remove_tag(tag_id)
+
+    return
+
+
 @app.get("/api/tag", response_model=List[TagOut], tags=['標籤'])
 async def 獲取標籤列表(
         *,

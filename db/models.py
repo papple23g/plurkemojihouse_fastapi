@@ -48,6 +48,13 @@ class Emoji(models.Model):
         tag_list = await Tag.get_tag_list_by_str_list(emojiAddTagsIn.tag_str_list)
         await self._tag_list.add(*tag_list)
 
+    async def remove_tag(self, tag_id: str):
+        """ 移除標籤
+        """
+        tag = await Tag.filter(id=tag_id).first()
+        if tag:
+            await self._tag_list.remove(tag)
+
     @classmethod
     async def get_similar_emoji_list(
             cls,
