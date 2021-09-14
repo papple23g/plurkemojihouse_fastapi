@@ -6,8 +6,18 @@ from browser import bind, window, alert, ajax, aio
 from py.schema import *
 from py.utils import *
 
+# 綁定頭像按鈕登入登出事件:
+window.firebase.auth().onAuthStateChanged(
+    lambda user: Avatar().refresh()
+)
+
 
 async def main():
+    # 置入標頭
+    doc <= header_div()
+
+    # 置入導覽列
+    doc <= nav_div()
 
     # 分析網址查詢參數字典
     emojiQuery = EmojiQuery.from_url()

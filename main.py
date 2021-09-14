@@ -34,7 +34,16 @@ templates = Jinja2Templates(directory=".")
 
 @app.get("/search", response_class=HTMLResponse)
 async def 表符搜尋頁面(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            # 目前版本 ##
+            "VERSION": "3.0",
+            # 瀏覽人次 ##
+            "VIEWS": 123
+        }
+    )
 
 
 @app.get("/api/emoji", response_model=List[EmojiOut], tags=['表符'])

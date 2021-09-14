@@ -7,6 +7,25 @@
     <script src="static/js/dependent/brython_stdlib.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!-- Firebase-->
+    <script src="https://www.gstatic.com/firebasejs/6.3.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.0/firebase-auth.js"></script>
+    <script>
+        //Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyDwDnYx6hEZs2_-Ms6QGHqOm5TOfDqzb_s",
+            authDomain: "nidojs-project.firebaseapp.com",
+            databaseURL: "https://nidojs-project.firebaseio.com",
+            projectId: "nidojs-project",
+            storageBucket: "",
+            messagingSenderId: "299679813499",
+            appId: "1:299679813499:web:fe6bd8ed07d89af8"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+
     <link href="static/css/index.css" rel="stylesheet" type="text/css">
     <link href="https://www.w3schools.com/w3css/4/w3.css" rel="stylesheet" type="text/css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"
@@ -14,10 +33,15 @@
 
 </head>
 
+<!-- 後端傳遞變數 -->
+<p hidden id="VERSION">{{VERSION}}</p>
+<p hidden id="VIEWS">{{VIEWS}}</p>
+
+
+<!-- Brython -->
+
 <body onload="brython()">
-
     <script src="py/index.py" type="text/python"></script>
-
 </body>
 
 </html>

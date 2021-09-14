@@ -820,31 +820,31 @@ class EmojiSearchForm:
                             )
                         ),
 
-                        # 勾選元素: 組合表符
-                        DIV(
-                            [
-                                SPAN(
-                                    " 檢視模式: ",
-                                    Class='noselect',
-                                    style=dict(
-                                        fontWeight="bold",
-                                    )
-                                ),
-                                INPUT(
-                                    type="radio",
-                                    name="view_mode",
-                                    value="list",
-                                    checked=True,
-                                )+SPAN(" 列表", Class="noselect"),
-                                INPUT(
-                                    type="radio",
-                                    name="view_mode",
-                                    value="grid",
-                                    marginLeft="10px",
-                                )+SPAN(" 網格", Class="noselect"),
-                            ],
-                            style=dict(cursor="pointer")
-                        )
+                        # # 勾選元素: 檢視模式 #.##
+                        # DIV(
+                        #     [
+                        #         SPAN(
+                        #             " 檢視模式: ",
+                        #             Class='noselect',
+                        #             style=dict(
+                        #                 fontWeight="bold",
+                        #             )
+                        #         ),
+                        #         INPUT(
+                        #             type="radio",
+                        #             name="view_mode",
+                        #             value="list",
+                        #             checked=True,
+                        #         )+SPAN(" 列表", Class="noselect"),
+                        #         INPUT(
+                        #             type="radio",
+                        #             name="view_mode",
+                        #             value="grid",
+                        #             marginLeft="10px",
+                        #         )+SPAN(" 網格", Class="noselect"),
+                        #     ],
+                        #     style=dict(cursor="pointer")
+                        # )
 
                     ],
                     style=dict(marginTop="15px")
@@ -855,7 +855,7 @@ class EmojiSearchForm:
                 borderRadius="10px",
                 margin="5px 20px",
                 boxShadow="grey 1px 1px 3px",
-                padding="20px 20px",
+                padding="40px 30px",
                 width="-webkit-fill-available",
             )
         )
@@ -887,4 +887,146 @@ async def tag_search_result_div(emojiQuery: EmojiQuery) -> DIV:
         ],
         Class="w3-container",
         style=dict(margin="17px"),
+    )
+
+
+class Avatar:
+    """ 人物頭像 登出/登入按鈕
+    """
+
+    def refresh(self):
+        """ 刷新區域
+        """
+        doc['avatar_div'].clear()
+        doc['avatar_div'] <= Avatar().div
+
+    def login(self) -> None:
+        """ 登入 (使用 Google 帳號登入)
+        """
+        window.firebase.auth().signInWithPopup(
+            window.firebase.auth.GoogleAuthProvider.new()
+        )
+
+    def logout(self) -> None:
+        """ 登出
+        """
+        if window.confirm("確定要登出嗎?"):
+            window.firebase.auth().signOut()
+
+    @property
+    def user(self):
+        return window.firebase.auth().currentUser
+
+    @property
+    def img(self):
+        return IMG(
+            src=self.user.photoURL,
+            style={
+                'width': '30px',
+                'border-radius': '30px',
+            },
+        )
+
+    @property
+    def is_login(self):
+        """ 是否已登入
+        """
+        if self.user:
+            return True
+        return False
+
+    @property
+    def div(self) -> DIV:
+        """ 登入區域
+        """
+        _style_dict = dict(
+            position='absolute',
+            backgroundColor='rgb(162, 162, 162)',
+            borderRadius='16px',
+            padding='6px',
+            cursor='pointer',
+            top='15px',
+            right='5px',
+        )
+
+        # 若使用者已登入，就顯示頭像及名稱
+        if self.is_login:
+            return DIV(
+                [
+                    self.img,
+                    SPAN(" "+self.user.displayName),
+                ],
+                style=_style_dict,
+            ).bind('click', lambda ev: self.logout())
+
+        # 若使用者尚未登入，就顯示預設頭像
+        return DIV(
+            [
+                IMG(
+                    src="/static/img/anonymous-icon-0.jpg", style={'width': '30px'}
+                ),
+                I(Class="fab fa-google", style={'margin': '0 5px'}),
+            ],
+            style=_style_dict,
+        ).bind('click', lambda ev: self.login())
+
+
+def header_div() -> DIV:
+    """ 網頁標頭區域
+    """
+    return DIV(
+        [
+            # 網頁標頭 H1 元素 (噗浪表符庫 3.0)
+            H1(
+                B(
+                    f"噗浪表符庫 {doc['VERSION'].innerHTML}", style={
+                        "font-family": "微軟正黑體"
+                    }
+                ),
+                style={"float": "left"},
+            ),
+            # 使用者登入訊息DIV元素
+            DIV(
+                Avatar().div,
+                id="avatar_div"
+            ),
+            # 瀏覽人次區塊DIV元素
+            DIV(
+                SPAN(
+                    f"瀏覽人次: {doc['VIEWS'].innerHTML}",
+                    style={
+                        "float": "right",
+                    },
+                ),
+                style={"clear": "both"}
+            ),
+        ],
+        id="div_header",
+        Class="w3-row-padding w3-green",
+        style=dict(
+            height='100px',
+            position='relative',
+            zIndex='10',
+        )
+    )
+
+
+def nav_div() -> DIV:
+    """ 導覽列區域
+    """
+    def nav_item_a(name: str, href: str) -> DIV:
+        return A(
+            DIV(
+                name,
+                Class="w3-bar-item w3-button w3-large w3-hover-blue",
+            ),
+            href=href,
+        )
+
+    return DIV(
+        [
+            nav_item_a("搜尋", "/search"),
+            nav_item_a("首頁", "/"),
+        ],
+        Class="w3-black"
     )

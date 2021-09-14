@@ -6,6 +6,7 @@ from browser import doc, window, timer
 
 from py.common_utils import *
 jq = window.jQuery
+# window.firebase.auth().onAuthStateChanged(lambda user:window.location.reload())
 
 
 def get_url_query_dict(url: str) -> dict:
@@ -39,7 +40,7 @@ def copy_text_to_cliboard(text: str) -> None:
 
 def show_alert_message(
         message: str,
-        fade_in_ms: int = 400,
+        fade_in_ms: int = 100,
         fade_delay_ms: int = 1500,
         fade_out_ms: int = 400,):
     """ 顯示淡出淡入訊息
@@ -49,7 +50,7 @@ def show_alert_message(
 
     Args:
         message (str): 文字訊息
-        fade_in_ms (int, optional): 淡入毫秒數. Defaults to 800.
+        fade_in_ms (int, optional): 淡入毫秒數. Defaults to 100.
         fade_delay_ms (int, optional): 訊息持續毫秒數. Defaults to 1500.
         fade_out_ms (int, optional): 淡出毫秒數. Defaults to 400.
     """
