@@ -4,7 +4,7 @@ import uuid
 from browser.html import *
 from browser import doc, window, timer
 
-from py.common_utils import *
+from pysrc.common_utils import *
 jq = window.jQuery
 # window.firebase.auth().onAuthStateChanged(lambda user:window.location.reload())
 

@@ -28,7 +28,7 @@ app = FastAPI()
 
 # 設定前端文件:靜態文件與HTML檔
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/py", StaticFiles(directory="py"), name="py")
+app.mount("/pysrc", StaticFiles(directory="pysrc"), name="py")
 templates = Jinja2Templates(directory=".")
 
 

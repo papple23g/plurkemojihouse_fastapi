@@ -4,7 +4,7 @@ from PIL import Image  # python -m pip install Pillow
 import requests
 from typing import List
 
-from py.common_utils import *
+from pysrc.common_utils import *
 import requests
 
 

@@ -3,10 +3,10 @@ from browser import document as doc
 from browser.html import *
 from browser import bind, window, alert, ajax, aio
 
-from py.schema import *
-from py.utils import *
+from pysrc.schema import *
+from pysrc.utils import *
 
-# 綁定頭像按鈕登入登出事件:
+# 綁定頭像按鈕登入登出事件: 刷新頭像區域
 window.firebase.auth().onAuthStateChanged(
     lambda user: Avatar().refresh()
 )

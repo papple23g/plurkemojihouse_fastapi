@@ -6,7 +6,7 @@ from browser import bind, window, alert, ajax, aio, prompt, doc
 import json
 from typing import List, Dict, Any, Optional, Union, Tuple
 
-from py.utils import *
+from pysrc.utils import *
 Emoji = None
 EmojiQuery = None
 
@@ -782,12 +782,12 @@ class EmojiSearchForm:
                 # 第二行搜尋元素: 進階搜尋設定區域
                 DIV(
                     [
-                        # 勾選元素: 顯示我的收藏
+                        # 勾選元素: 我的收藏
                         DIV(
                             [
                                 INPUT(type="checkbox"),
                                 SPAN(
-                                    " 顯示我的收藏",
+                                    " 我的收藏",
                                     Class='noselect',
                                     style=dict(
                                         fontWeight="bold",
@@ -966,6 +966,7 @@ class Avatar:
                     src="/static/img/anonymous-icon-0.jpg", style={'width': '30px'}
                 ),
                 I(Class="fab fa-google", style={'margin': '0 5px'}),
+                SPAN("登入"),
             ],
             style=_style_dict,
         ).bind('click', lambda ev: self.login())
